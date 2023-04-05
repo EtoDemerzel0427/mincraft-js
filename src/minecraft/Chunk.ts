@@ -20,46 +20,15 @@ export class Chunk {
         this.cubes = size*size;        
         this.generateCubes();
     }
-
-    // private generateHeightMap(seed: string): Float32Array {
-    //     let noises = new ValueNoise(seed, 8, 64);
-    //     let heightMap = new Float32Array(this.size * this.size).fill(0.);
-    //     let frequency = 0.02;
-    //     let frequencyMultiplier = 2;
-    //     let amplitudeMultiplier = 0.5;
-    //     const octaves = 3;
-    //     let maxNoise = 0.0;
-    //     for (let j = 0; j < this.size; j++) {
-    //         for (let i = 0; i < this.size; i++) {
-    //             let x = i * frequency;
-    //             let y = j * frequency;
-    //             let amplitude = 1.0;
-    //             for (let k = 0; k < octaves; k++) {
-    //                 heightMap[this.size * j + i] += amplitude * noises.eval(x, y);
-    //                 x *= frequencyMultiplier;
-    //                 y *= frequencyMultiplier;
-    //                 amplitude *= amplitudeMultiplier;
-    //             }
-    //             maxNoise = Math.max(maxNoise, heightMap[this.size * j + i]);
-    //         }
-    //     }
-    //
-    //     for (let j = 0; j < this.size * this.size; j++) {
-    //         heightMap[j]  *= (100 / maxNoise);
-    //         // console.log(heightMap[j]);
-    //     }
-    //     return heightMap;
-    // }
-    
     
     private generateCubes() {
         const topleftx = this.x - this.size / 2;
         const toplefty = this.y - this.size / 2;
         
       //TODO: The real landscape-generation logic. The example code below shows you how to use the pseudorandom number generator to create a few cubes.
-      this.cubes = this.size * this.size;
-      this.cubePositionsF32 = new Float32Array(4 * this.cubes);
-
+      // this.cubes = this.size * this.size;
+      // this.cubePositionsF32 = new Float32Array(4 * this.cubes);
+      const visibleCubes = [];
 
       const seedInt = this.x + "&" + this.y;
       const seed = seedInt.toString();
@@ -72,13 +41,31 @@ export class Chunk {
       for(let i= 0; i < this.size; i++) {
           for(let j= 0; j<this.size; j++) {
               const height = heightMap[i * this.size + j];
-              const idx = this.size * i + j;
-            this.cubePositionsF32[4*idx] = topleftx + j;
-            this.cubePositionsF32[4*idx + 1] = height;
-            this.cubePositionsF32[4*idx + 2] = toplefty + i;
-            this.cubePositionsF32[4*idx + 3] = 0;
+
+              // get neighbors
+              // todo: note that currently we still need to handle the boundary, but after we implement the boundary loading,
+              // we can remove the boundary handling here, because you will never see the boundary
+              const left = (j == 0) ? 0 : heightMap[i * this.size + j - 1];
+              const right = (j == this.size - 1) ? 0: heightMap[i * this.size + j + 1];
+              const up = (i == 0) ? 0: heightMap[(i - 1) * this.size + j];
+              const down = (i == this.size - 1) ? 0: heightMap[(i + 1) * this.size + j];
+
+              // get the minimum height of the neighbors
+              const min = Math.min(left, right, up, down);
+
+              // render from min + 1 to height
+              // if the current height is lower than all its neighbors, we just render the uppermost cube
+              for (let k = Math.min(min + 1, height) ; k <= height; k++) {
+                  visibleCubes.push(topleftx + j);
+                  visibleCubes.push(k);
+                  visibleCubes.push(toplefty + i);
+                  visibleCubes.push(0.0);
+              }
           }
       }
+
+      this.cubes = visibleCubes.length / 4;
+      this.cubePositionsF32 = new Float32Array(visibleCubes);
     }
     
     public cubePositions(): Float32Array {

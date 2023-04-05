@@ -24,7 +24,7 @@ class ValueNoise {
         this.baseMap = new Float32Array(chunkSize * chunkSize);
         let base = Math.floor(100.0 * this.rng.next());
         for (let i = 0; i < size * size; i++) {
-            this.values[i] = base + Math.floor(100.0 * this.rng.next()) % 24;
+            this.values[i] = base + Math.floor(100.0 * this.rng.next() - 50) % 20;
             this.values[i] = Math.max(Math.min(Math.floor(this.values[i]), 100), 1.0);
         }
         this.sizeMask = size - 1;
