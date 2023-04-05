@@ -61,7 +61,7 @@ export class Chunk {
       this.cubePositionsF32 = new Float32Array(4 * this.cubes);
 
 
-      const seedInt = this.x + this.y;
+      const seedInt = this.x + "&" + this.y;
       const seed = seedInt.toString();
 
       let noises = new ValueNoise(seed, 8, 64);
