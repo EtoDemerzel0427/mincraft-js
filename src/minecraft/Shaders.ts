@@ -62,20 +62,22 @@ export const blankCubeFSText = `
         return dot(d,random_vec);
     }
 
-    float perlin(float u, float v,float seed) {
-        float x0 = 0.0;
-        float y0 = 0.0;
-        float x1 = 1.0;
-        float y1 = 1.0;
+    float perlin(float x, float y,float seed) {
+        float x0 = floor(x);
+        float y0 = floor(y);
+        float x1 = floor(x)+1.0;
+        float y1 = floor(y)+1.0;
 
         float h0, h1, i0, i1, value;
+        float u = x - x0;
+        float v = y - y0;
          
-        h0 = getDot(x0, y0, u, v,seed);
-        h1 = getDot(x1, y0, u, v,seed);
+        h0 = getDot(x0, y0, x, y,seed);
+        h1 = getDot(x1, y0, x, y,seed);
         i0 = smoothmix(h0, h1, u);
          
-        h0 = getDot(x0, y1, u, v,seed);
-        h1 = getDot(x1, y1, u, v,seed);
+        h0 = getDot(x0, y1, x, y,seed);
+        h1 = getDot(x1, y1, x, y,seed);
         i1 = smoothmix(h0, h1, u);
          
         value = smoothmix(i0, i1, v);
@@ -85,6 +87,7 @@ export const blankCubeFSText = `
     void main() {
         vec3 kd = vec3(1.0, 1.0, 1.0);
         vec3 ka = vec3(0.1, 0.1, 0.1);
+        float size  = 10.0;
 
         /* Compute light fall off */
         vec4 lightDirection = uLightPos - wsPos;
@@ -92,8 +95,7 @@ export const blankCubeFSText = `
 	    dot_nl = clamp(dot_nl, 0.0, 1.0);
         
         if(normal.x==0.0 && normal.z==0.0 && normal.y>0.0){
-            float p = perlin(uv.x,uv.y,seed);
-            //float t = abs(sin((uv.x+uv.y)*2.0*3.1415));
+            float p = min(perlin(uv.x*size,uv.y*size,seed),1.0);
             gl_FragColor = vec4(p,p,p,1.0);
         }
         else{
