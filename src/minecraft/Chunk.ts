@@ -1,3 +1,4 @@
+import {Mat3, Mat4, Vec2, Vec3, Vec4} from "../lib/TSM.js";
 import Rand from "../lib/rand-seed/Rand.js"
 import ValueNoise from "./noise.js";
 
@@ -26,17 +27,11 @@ export class Chunk {
         const toplefty = this.y - this.size / 2;
         
       //TODO: The real landscape-generation logic. The example code below shows you how to use the pseudorandom number generator to create a few cubes.
-      // this.cubes = this.size * this.size;
-      // this.cubePositionsF32 = new Float32Array(4 * this.cubes);
       const visibleCubes = [];
 
-      const seedInt = this.x + "&" + this.y;
-      const seed = seedInt.toString();
+      let noises = new ValueNoise(this.x, this.y, 8, 64);
 
-      let noises = new ValueNoise(seed, 8, 64);
-      noises.generateBaseMap();
-
-      const heightMap = noises.getHeights();
+      const heightMap = noises.generateHeightMap();
 
       for(let i= 0; i < this.size; i++) {
           for(let j= 0; j<this.size; j++) {

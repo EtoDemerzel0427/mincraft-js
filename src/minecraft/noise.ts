@@ -1,81 +1,77 @@
 import Rand from "../lib/rand-seed/Rand.js"
 
+// linear interpolation
 function lerp(lo: number, hi: number, t: number): number {
     return lo * (1 - t) + hi * t;
 }
 
-function smoothstep(t: number): number {
-    return t * t * (3 - 2 * t);
-}
-
 class ValueNoise {
+    private center_x: number;
+    private center_y: number;
     private rng: Rand;
-    private size: number;
-    private chunkSize: number;
-    private values: Float32Array;
-    private baseMap: Float32Array;
-    private sizeMask: number;
+    private readonly patch_size: number;
+    private readonly chunk_size: number;
 
-    constructor(seed: string, size: number, chunkSize: number) {
+    private patch_values: Float32Array;
+
+    constructor(center_x: number, center_y: number, patch_size: number, chunk_size: number) {
+        this.center_x = center_x;
+        this.center_y = center_y;
+        const seed = center_x + "&" + center_y;
         this.rng = new Rand(seed);
-        this.size = size;
-        this.chunkSize = chunkSize;
-        this.values = new Float32Array(size * size);
-        this.baseMap = new Float32Array(chunkSize * chunkSize);
-        let base = Math.floor(100.0 * this.rng.next());
-        for (let i = 0; i < size * size; i++) {
-            this.values[i] = base + Math.floor(100.0 * this.rng.next() - 50) % 20;
-            this.values[i] = Math.max(Math.min(Math.floor(this.values[i]), 100), 1.0);
-        }
-        this.sizeMask = size - 1;
+        this.patch_size = patch_size;
+        this.chunk_size = chunk_size;
 
-        this.generateBaseMap();
+        this.patch_values = new Float32Array(patch_size * patch_size);
+        for (let i = 0; i < patch_size * patch_size; i++) {
+            this.patch_values[i] = 30 * this.rng.next();
+        }
     }
 
     public eval(x: number, y: number): number {
-        let x0 = Math.floor(x);
-        let y0 = Math.floor(y);
-        let x1 = Math.min(x0 + 1, this.size - 1);
-        let y1 = Math.min(y0 + 1, this.size - 1);
-        let x_frac = x - x0;
-        let y_frac = y - y0;
-        let x_frac_1 = 1 - x_frac;
-        let y_frac_1 = 1 - y_frac;
+        const x0 = Math.floor(x);
+        const y0 = Math.floor(y);
+        const x1 = Math.min(x0 + 1, this.patch_size - 1);
+        const y1 = Math.min(y0 + 1, this.patch_size - 1);
 
-        let h00 = this.values[y0 * this.size + x0];
-        let h01 = this.values[y1 * this.size + x0];
-        let h10 = this.values[y0 * this.size + x1];
-        let h11 = this.values[y1 * this.size + x1];
+        const tx = x - x0;
+        const ty = y - y0;
 
-        let h0 = lerp(h00, h10, x_frac);
-        let h1 = lerp(h01, h11, x_frac);
-        return lerp(h0, h1, y_frac);
+        const v00 = this.patch_values[y0 * this.patch_size + x0];
+        const v01 = this.patch_values[y0 * this.patch_size + x1];
+        const v10 = this.patch_values[y1 * this.patch_size + x0];
+        const v11 = this.patch_values[y1 * this.patch_size + x1];
+
+        const v0 = lerp(v00, v01, tx);
+        const v1 = lerp(v10, v11, tx);
+
+        return lerp(v0, v1, ty);
     }
 
-    public generateBaseMap() {
-        const factor = this.size / this.chunkSize;
-        for (let j = 0; j < this.chunkSize; j++) {
-            for (let i = 0; i < this.chunkSize; i++) {
-                const x = i * factor;
-                const y = j * factor;
-                this.baseMap[j * this.chunkSize + i] = this.eval(x, y);
+    public generateHeightMap(): Float32Array {
+        let height_map = new Float32Array(this.chunk_size * this.chunk_size);
+        let frequency = 1.0 / 64.0;
+        const frequency_multiplier = 2.0;
+        const amplitude_multiplier = 0.5;
+        const num_octaves = 4;
+        for (let j = 0; j < this.chunk_size; j++) {
+            for (let i = 0; i < this.chunk_size; i++) {
+                let x = i * frequency;
+                let y = j * frequency;
+                let amplitude = 1.0;
+                let height = 0.0;
+                for (let k = 0; k < num_octaves; k++) {
+                    height += this.eval(x, y) * amplitude;
+                    x *= frequency_multiplier;
+                    y *= frequency_multiplier;
+                    amplitude *= amplitude_multiplier;
+                }
+                height_map[j * this.chunk_size + i] = Math.min(Math.floor(height), 100);
             }
         }
-    }
 
-    public getHeights(): Float32Array {
-        let heights = new Float32Array(this.chunkSize * this.chunkSize);
-        for (let i = 0; i < this.chunkSize; i++) {
-            for (let j = 0; j < this.chunkSize; j++) {
-                heights[i * this.chunkSize + j] = Math.floor(
-                      1/ 2 * (1 / 8.0 * this.baseMap[i * this.chunkSize + j] +
-                        1 / 4.0 * this.baseMap[Math.floor(i/2) * this.chunkSize + Math.floor(j/2)] +
-                        1 / 2.0 * this.baseMap[Math.floor(i/4) * this.chunkSize + Math.floor(j/4)] +
-                        this.baseMap[Math.floor(i/8) * this.chunkSize + Math.floor(j/8)])
-                );
-            }
-        }
-        return heights;
+        return height_map;
+
     }
 }
 
