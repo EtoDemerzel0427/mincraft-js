@@ -116,25 +116,6 @@ class ValueNoise {
         other_rng = new Rand(other_seed);
         // it is the first element of the other patch, so we don't need to skip anything
         this.padded_patch_values[padded_size * padded_size - 1] = ValueNoise.HEIGHT_SCALE * other_rng.next();
-
-        // let test_rng = new Rand(other_seed);
-        // console.log("test patch: " + other_seed);
-        // for (let i = 0; i < this.patch_size; i++) {
-        //     let s = "";
-        //     for (let j = 0; j < this.patch_size; j++) {
-        //         s += Math.floor(30 * test_rng.next()) + " ";
-        //     }
-        //     console.log(s);
-        // }
-        //
-        // console.log("padded patch:" + this.center_x + "&" + this.center_y);
-        // for (let i = 0; i < padded_size; i++) {
-        //     let s = "";
-        //     for (let j = 0; j < padded_size; j++) {
-        //         s += Math.floor(this.padded_patch_values[i * padded_size + j]) + " ";
-        //     }
-        //     console.log(s);
-        // }
     }
 
     public eval(x: number, y: number): number {
@@ -195,27 +176,6 @@ class ValueNoise {
         }
 
 
-        // test code
-        if (this.center_x === 0 && this.center_y === 0) {
-            console.log("padded chunk:" + this.center_x + "&" + this.center_y);
-            for (let i = 0; i < padded_chunk_size; i++) {
-                let s = "";
-                for (let j = 0; j < padded_chunk_size; j++) {
-                    s += padded_height_map[i * padded_chunk_size + j].toFixed(2) + " ";
-                }
-                console.log(s);
-            }
-
-            console.log("padded patch:" + this.center_x + "&" + this.center_y);
-            for (let i = 0; i < this.patch_size + 2; i++) {
-                let s = "";
-                for (let j = 0; j < this.patch_size + 2; j++) {
-                    s += this.padded_patch_values[i * (this.patch_size + 2) + j].toFixed(2) + " ";
-                }
-                console.log(s);
-            }
-        }
-
         // get the inner 64 x 64
         let height_map = new Float32Array(this.chunk_size * this.chunk_size);
         for (let j = 0; j < this.chunk_size; j++) {
@@ -224,16 +184,6 @@ class ValueNoise {
             }
         }
 
-        if (this.center_x === 0 && this.center_y === 0) {
-            console.log("height map:" + this.center_x + "&" + this.center_y);
-            for (let i = 0; i < this.chunk_size; i++) {
-                let s = "";
-                for (let j = 0; j < this.chunk_size; j++) {
-                    s += height_map[i * this.chunk_size + j].toFixed(2) + " ";
-                }
-                console.log(s);
-            }
-        }
         return height_map;
 
     }
