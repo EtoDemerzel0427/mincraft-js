@@ -1,6 +1,7 @@
 import {Mat3, Mat4, Vec2, Vec3, Vec4} from "../lib/TSM.js";
 import Rand from "../lib/rand-seed/Rand.js"
-import ValueNoise from "./noise.js";
+// import ValueNoise from "./noise.js";
+import MultiOctaveNoise from "./noise.js";
 
 function lerp(lo: number, hi: number, t: number): number {
     return lo * (1 - t) + hi * t;
@@ -29,8 +30,8 @@ export class Chunk {
       //TODO: The real landscape-generation logic. The example code below shows you how to use the pseudorandom number generator to create a few cubes.
       const visibleCubes = [];
 
-      let noises = new ValueNoise(this.x, this.y, 8, 64);
-
+      // let noises = new ValueNoise(this.x, this.y, 8, 64);
+      let noises = new MultiOctaveNoise(this.x, this.y, this.size, [2, 4, 8]);
       const heightMap = noises.generateHeightMap();
 
       for(let i= 0; i < this.size; i++) {
