@@ -158,7 +158,7 @@ class ValueNoise {
                 let x = i / upsample_factor;
                 let y = j / upsample_factor;
 
-                padded_height_map[j * padded_chunk_size + i] = Math.min(Math.floor(1/8 * this.eval(x, y)), 100);
+                padded_height_map[j * padded_chunk_size + i] = Math.min(1/8 * this.eval(x, y), 100);
                 // height_map[j * this.chunk_size + i] = Math.min(Math.floor(height), 100);
                 // padded_height_map[j * padded_chunk_size + i] = Math.min(Math.floor(height), 100);  // todo: add floor back here
             }
@@ -211,6 +211,10 @@ class MultiOctaveNoise {
                 height_map[j] += octave_height_map[j] * amplitude;
             }
             amplitude *= amplitude_multiplier;
+        }
+
+        for (let i = 0; i < this.chunk_size * this.chunk_size; i++) {
+            height_map[i] = Math.min(Math.floor(height_map[i]), 100);
         }
 
         return height_map;
