@@ -18,8 +18,8 @@ import { Chunk } from "./Chunk.js";
 export class MinecraftAnimation extends CanvasAnimation {
   private gui: GUI;
 
-  chunk : Chunk;
-  chunks : Chunk[]; // the 3x3 chunks around the player
+  // chunk : Chunk;
+  chunks : Map<string, Chunk>; // the 3x3 chunks around the player
 
   /*  Cube Rendering */
   private cubeGeometry: Cube;
@@ -52,15 +52,26 @@ export class MinecraftAnimation extends CanvasAnimation {
     // each chunk is 64 x 64
     // todo: to do lazy loading, this should be changed to a map of chunks
     // now for simplicity, we just generate all the chunks in an array
-    this.chunks = [];
+    // this.chunks = [];
+    // for (let i = -1; i <= 1; i++) {
+    //   for (let j = -1; j <= 1; j++) {
+    //     this.chunks.push(new Chunk(i * 64, j * 64, 64));
+    //   }
+    // }
+    this.chunks = new Map();
+
+    // find the chunk that the player is in (the center of the 3x3 chunks)
+    const playerChunkX = Math.floor(this.playerPosition.x / 64);
+    const playerChunkY = Math.floor(this.playerPosition.z / 64);
+
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
-        this.chunks.push(new Chunk(i * 64, j * 64, 64));
+        const centerX = playerChunkX + i * 64;
+        const centerY = playerChunkY + j * 64;
+        const key = `${centerX},${centerY}`; // Use a string as a key for the map
+        this.chunks.set(key, new Chunk(centerX, centerY, 64));
       }
     }
-
-
-
 
     this.blankCubeRenderPass = new RenderPass(gl, blankCubeVSText, blankCubeFSText);
     this.cubeGeometry = new Cube();
@@ -70,6 +81,34 @@ export class MinecraftAnimation extends CanvasAnimation {
     this.backgroundColor = new Vec4([0.0, 0.37254903, 0.37254903, 1.0]);
   }
 
+  private updateChunks() {
+    // Calculate the player's new chunk coordinates
+    const playerChunkX = Math.floor(this.playerPosition.x / 64);
+    const playerChunkY = Math.floor(this.playerPosition.z / 64);
+
+    // Remove chunks that are outside the 3x3 area around the player's new chunk
+    this.chunks.forEach((chunk, key) => {
+      const [chunkX, chunkY] = key.split(',').map(Number);
+      if (Math.abs(chunkX - playerChunkX * 64) > 64 || Math.abs(chunkY - playerChunkY * 64) > 64) {
+        this.chunks.delete(key);
+      }
+    });
+
+    // Add chunks that are inside the 3x3 area around the player's new chunk, but not in the current `chunks` Map
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        const centerX = playerChunkX * 64 + i * 64;
+        const centerY = playerChunkY * 64 + j * 64;
+        const key = `${centerX},${centerY}`;
+
+        if (!this.chunks.has(key)) {
+          this.chunks.set(key, new Chunk(centerX, centerY, 64));
+        }
+      }
+    }
+  }
+
+
   /**
    * Setup the simulation. This can be called again to reset the program.
    */
@@ -77,7 +116,7 @@ export class MinecraftAnimation extends CanvasAnimation {
       this.gui.reset();
 
       this.playerPosition = this.gui.getCamera().pos();
-
+      this.updateChunks();
   }
 
 
@@ -152,6 +191,7 @@ export class MinecraftAnimation extends CanvasAnimation {
   public draw(): void {
     //TODO: Logic for a rudimentary walking simulator. Check for collisions and reject attempts to walk into a cube. Handle gravity, jumping, and loading of new chunks when necessary.
     this.playerPosition.add(this.gui.walkDir());
+    this.updateChunks();
 
     this.gui.getCamera().setPos(this.playerPosition);
 
@@ -174,17 +214,21 @@ export class MinecraftAnimation extends CanvasAnimation {
     gl.viewport(x, y, width, height);
 
     //TODO: Render multiple chunks around the player, using Perlin noise shaders
-    const positionArrays = this.chunks.map((chunk) => chunk.cubePositions());
-    const totalLength = positionArrays.reduce((acc, cur) => acc + cur.length, 0);
-    const allPositions = new Float32Array(totalLength);
-    let offset = 0;
-    for (const positions of positionArrays) {
-        allPositions.set(positions, offset);
-        offset += positions.length;
+    // const positionArrays = this.chunks.map((chunk) => chunk.cubePositions());
+    // const totalLength = positionArrays.reduce((acc, cur) => acc + cur.length, 0);
+    // const allPositions = new Float32Array(totalLength);
+    // let offset = 0;
+    // for (const positions of positionArrays) {
+    //     allPositions.set(positions, offset);
+    //     offset += positions.length;
+    // }
+    //
+    // this.blankCubeRenderPass.updateAttributeBuffer("aOffset", allPositions);
+    // this.blankCubeRenderPass.drawInstanced(totalLength / 4);
+    for (const chunk of this.chunks.values()) {
+      this.blankCubeRenderPass.updateAttributeBuffer("aOffset", chunk.cubePositions());
+      this.blankCubeRenderPass.drawInstanced(chunk.cubePositions().length / 4);
     }
-
-    this.blankCubeRenderPass.updateAttributeBuffer("aOffset", allPositions);
-    this.blankCubeRenderPass.drawInstanced(totalLength / 4);
 
   }
 
