@@ -61,8 +61,8 @@ export class MinecraftAnimation extends CanvasAnimation {
     this.chunks = new Map();
 
     // find the chunk that the player is in (the center of the 3x3 chunks)
-    const playerChunkX = Math.floor(this.playerPosition.x / 64);
-    const playerChunkY = Math.floor(this.playerPosition.z / 64);
+    const playerChunkX = Math.round(this.playerPosition.x / 64);
+    const playerChunkY = Math.round(this.playerPosition.z / 64);
 
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
@@ -83,8 +83,8 @@ export class MinecraftAnimation extends CanvasAnimation {
 
   private updateChunks() {
     // Calculate the player's new chunk coordinates
-    const playerChunkX = Math.floor(this.playerPosition.x / 64);
-    const playerChunkY = Math.floor(this.playerPosition.z / 64);
+    const playerChunkX = Math.round(this.playerPosition.x / 64);
+    const playerChunkY = Math.round(this.playerPosition.z / 64);
 
     // Remove chunks that are outside the 3x3 area around the player's new chunk
     this.chunks.forEach((chunk, key) => {

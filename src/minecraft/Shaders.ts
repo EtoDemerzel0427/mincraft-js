@@ -84,19 +84,46 @@ export const blankCubeFSText = `
         return value*0.5+0.5; 
     }
 
+    float perlin_texture(float x, float y, float size, float seed){
+        x *= size;
+        y *= size;
+        float res = 0.0;
+        float zoom_size = size;
+
+        //TODO: Amazing, cannot use while-loop, don't know why
+        // while(zoom_size>=1.0){
+        //     res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        //     zoom_size/=2.0;
+        // }
+
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+
+        return res/size;
+    }
+
     void main() {
         vec3 kd = vec3(1.0, 1.0, 1.0);
         vec3 ka = vec3(0.1, 0.1, 0.1);
-        float size  = 10.0;
+        float size  = 32.0; // smaller, faster
 
         /* Compute light fall off */
         vec4 lightDirection = uLightPos - wsPos;
         float dot_nl = dot(normalize(lightDirection), normalize(normal));
 	    dot_nl = clamp(dot_nl, 0.0, 1.0);
         
-        if(normal.x==0.0 && normal.z==0.0 && normal.y>0.0){
-            float p = min(perlin(uv.x*size,uv.y*size,seed),1.0);
-            gl_FragColor = vec4(p,p,p,1.0);
+        if(dot_nl!=0.0){
+            float p = perlin_texture(uv.x, uv.y, size, seed);
+            vec3 pv = vec3(p,p,p);
+            gl_FragColor = vec4(clamp(ka + dot_nl * kd* pv, 0.0, 1.0), 1.0);
         }
         else{
             gl_FragColor = vec4(clamp(ka + dot_nl * kd, 0.0, 1.0), 1.0);
