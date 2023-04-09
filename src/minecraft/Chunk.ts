@@ -78,13 +78,12 @@ export class Chunk {
         const visibleCubeTypes = [];
         for(var i=0;i<this.cubes;++i){
             let h :number= this.cubePositionsF32[i*4+1]+1;
-            let hbarlow = 0.3*(this.maxHeight-this.minHeight)+this.minHeight;
-            let hbarhigh = 0.85*(this.maxHeight-this.minHeight)+this.minHeight;
+            let heightRange = (this.maxHeight-this.minHeight)+this.minHeight;
             let grass = 0.0 ;
-            let marble = Number(h>hbarlow && h<hbarhigh && Math.abs(this.y/64)%2==0 && Math.abs(this.x/64)%2==0)*1.0 ;
-            let creek = Number(h>=0.65*hbarlow && h<=hbarlow)*2.0;
-            let snow = Number(h>=hbarhigh)*3.0 ;
-            let stone = Number(h<0.65*hbarlow)*4.0 ;
+            let marble = Number(h>0.4* heightRange && h<0.5*heightRange )*1.0 ;
+            let creek = Number(h>=0.25*heightRange && h<=0.3*heightRange)*2.0;
+            let snow = Number(h>=0.85*heightRange)*3.0 ;
+            let stone = Number(h<0.25*heightRange)*4.0 ;
             let res = grass+marble+creek+snow+stone ;
             visibleCubeTypes.push(res);
         }
