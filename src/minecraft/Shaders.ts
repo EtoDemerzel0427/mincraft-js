@@ -110,6 +110,14 @@ export const blankCubeFSText = `
         return res/size;
     }
 
+    float marble_texture(vec2 uv,float p){ 
+        return (sin((uv.x*3.0+uv.y*3.0+5.0*p)*2.0*3.1415))*0.5+0.8;
+    }
+
+    float circle_texture(vec2 uv,float p){ 
+        return (sin(sqrt((uv.x*5.0-2.5)*(uv.x*5.0-2.5)+(uv.y*5.0-2.5)*(uv.y*5.0-2.5)+5.0*p)*2.0*3.1415))*0.5+0.8;
+    }
+
     void main() {
         vec3 kd = vec3(1.0, 1.0, 1.0);
         vec3 ka = vec3(0.1, 0.1, 0.1);
@@ -122,7 +130,8 @@ export const blankCubeFSText = `
         
         if(dot_nl!=0.0){
             float p = perlin_texture(uv.x, uv.y, size, seed);
-            vec3 pv = vec3(p,p,p);
+            p =  marble_texture(uv,p);
+            vec3 pv= vec3(p,p,p);
             gl_FragColor = vec4(clamp(ka + dot_nl * kd* pv, 0.0, 1.0), 1.0);
         }
         else{
