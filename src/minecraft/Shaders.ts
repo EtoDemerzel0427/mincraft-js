@@ -9,11 +9,13 @@ export const blankCubeVSText = `
     attribute vec4 aVertPos;
     attribute vec4 aOffset;
     attribute vec2 aUV;
+    attribute float blockType;
     
     varying vec4 normal;
     varying vec4 wsPos;
     varying vec2 uv;
     varying float seed;
+    varying float cubeType;
 
     void main () {
 
@@ -25,6 +27,7 @@ export const blankCubeVSText = `
         // set seed, every vertex in the same cube has the same aOffset,
         // so vertices within the same cube has the same seed.
         seed = aOffset.x*2.0 + aOffset.y*4.0 + aOffset.z*8.0;
+        cubeType = blockType;
     }
 `;
 
@@ -37,6 +40,7 @@ export const blankCubeFSText = `
     varying vec4 wsPos;
     varying vec2 uv;
     varying float seed;
+    varying float cubeType;
 
     float random (in vec2 pt, in float seed) {
         return fract(sin( (seed + dot(pt.xy, vec2(12.9898,78.233))))*43758.5453123);
@@ -84,19 +88,74 @@ export const blankCubeFSText = `
         return value*0.5+0.5; 
     }
 
+    float perlin_texture(float x, float y, float size, float seed){
+        x *= size;
+        y *= size;
+        float res = 0.0;
+        float zoom_size = size;
+
+        //TODO: Amazing, cannot use while-loop, don't know why
+        // while(zoom_size>=1.0){
+        //     res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        //     zoom_size/=2.0;
+        // }
+
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+        res += perlin(x /zoom_size, y / zoom_size,seed) * zoom_size;
+        zoom_size/=2.0;
+
+        return res/size;
+    }
+
+    float marble_texture(vec2 uv,float p,float a){ 
+        return (sin((uv.x*3.0+uv.y*3.0+a*p)*2.0*3.1415))*0.5+0.8;
+    }
+
+    float circle_texture(vec2 uv,float p){ 
+        return (sin(sqrt((uv.x*5.0-2.5)*(uv.x*5.0-2.5)+(uv.y*5.0-2.5)*(uv.y*5.0-2.5)+5.0*p)*2.0*3.1415))*0.5+0.8;
+    }
+
     void main() {
         vec3 kd = vec3(1.0, 1.0, 1.0);
         vec3 ka = vec3(0.1, 0.1, 0.1);
-        float size  = 10.0;
+        float size  = 32.0; // smaller, faster
 
         /* Compute light fall off */
         vec4 lightDirection = uLightPos - wsPos;
         float dot_nl = dot(normalize(lightDirection), normalize(normal));
 	    dot_nl = clamp(dot_nl, 0.0, 1.0);
         
-        if(normal.x==0.0 && normal.z==0.0 && normal.y>0.0){
-            float p = min(perlin(uv.x*size,uv.y*size,seed),1.0);
-            gl_FragColor = vec4(p,p,p,1.0);
+        if(dot_nl!=0.0){
+            float p = perlin_texture(uv.x, uv.y, size, seed);
+            vec3 pv;
+
+            if(cubeType==0.0){                                        //grass
+               p = clamp(p,0.8,1.0);
+               if(normal.x==0.0 && normal.z==0.0) {pv = vec3(0.13, 0.545*p, 0.13);}
+               else {pv = vec3(0.61*p, 0.29, 0.07);}
+            }else if(cubeType==1.0){                                 //marble place
+                p =  marble_texture(uv,p,5.0);
+                pv = vec3(0.95*p,0.95*p,0.95*p);
+            }else if(cubeType==2.0){                                 //creek
+                p = marble_texture(uv,p,1.2);
+                pv= vec3(0.1176*p,0.565*p,1.0*p);
+            }else if(cubeType==3.0){                                 //snow cover
+                p =  clamp(p+0.1,0.0,1.0);
+                pv= vec3(0.94*p,p,p);
+            }else if(cubeType==4.0){                                 //stone in creek
+                if(normal.x==0.0 && normal.z==0.0)
+                {p = circle_texture(uv,p);pv = vec3(0.82*p, 0.70*p, 0.55*p);}
+                else 
+                {p = marble_texture(uv,p,1.2); pv= vec3(0.1176*p,0.565*p,1.0*p);}
+            }
+            gl_FragColor = vec4(clamp(ka + dot_nl * kd* pv, 0.0, 1.0), 1.0);
         }
         else{
             gl_FragColor = vec4(clamp(ka + dot_nl * kd, 0.0, 1.0), 1.0);

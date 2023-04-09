@@ -61,8 +61,8 @@ export class MinecraftAnimation extends CanvasAnimation {
     this.chunks = new Map();
 
     // find the chunk that the player is in (the center of the 3x3 chunks)
-    const playerChunkX = Math.floor(this.playerPosition.x / 64);
-    const playerChunkY = Math.floor(this.playerPosition.z / 64);
+    const playerChunkX = Math.round(this.playerPosition.x / 64);
+    const playerChunkY = Math.round(this.playerPosition.z / 64);
 
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
@@ -83,8 +83,8 @@ export class MinecraftAnimation extends CanvasAnimation {
 
   private updateChunks() {
     // Calculate the player's new chunk coordinates
-    const playerChunkX = Math.floor(this.playerPosition.x / 64);
-    const playerChunkY = Math.floor(this.playerPosition.z / 64);
+    const playerChunkX = Math.round(this.playerPosition.x / 64);
+    const playerChunkY = Math.round(this.playerPosition.z / 64);
 
     // Remove chunks that are outside the 3x3 area around the player's new chunk
     this.chunks.forEach((chunk, key) => {
@@ -165,6 +165,16 @@ export class MinecraftAnimation extends CanvasAnimation {
       new Float32Array(0)
     );
 
+    this.blankCubeRenderPass.addInstancedAttribute("blockType",
+    1,
+    this.ctx.FLOAT,
+    false,
+    1 * Float32Array.BYTES_PER_ELEMENT,
+    0,
+    undefined,
+    new Float32Array(0)
+  );
+
     this.blankCubeRenderPass.addUniform("uLightPos",
       (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
         gl.uniform4fv(loc, this.lightPosition.xyzw);
@@ -227,6 +237,7 @@ export class MinecraftAnimation extends CanvasAnimation {
     // this.blankCubeRenderPass.drawInstanced(totalLength / 4);
     for (const chunk of this.chunks.values()) {
       this.blankCubeRenderPass.updateAttributeBuffer("aOffset", chunk.cubePositions());
+      this.blankCubeRenderPass.updateAttributeBuffer("blockType", chunk.cubeTypes());
       this.blankCubeRenderPass.drawInstanced(chunk.cubePositions().length / 4);
     }
 

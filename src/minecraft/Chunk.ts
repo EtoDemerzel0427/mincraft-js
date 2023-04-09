@@ -11,16 +11,22 @@ function lerp(lo: number, hi: number, t: number): number {
 export class Chunk {
     private cubes: number; // Number of cubes that should be *drawn* each frame
     private cubePositionsF32: Float32Array; // (4 x cubes) array of cube translations, in homogeneous coordinates
+    private cubeTypeF32: Float32Array; // the type of cube (grass=0.0, marble=1.0,creek=2.0, snow mountain=3.0,  stone in creek=4.0)
     private x : number; // Center of the chunk
     private y : number;
     private size: number; // Number of cubes along each side of the chunk
+    private maxHeight: number;
+    private minHeight: number;
     
     constructor(centerX : number, centerY : number, size: number) {
         this.x = centerX;
         this.y = centerY;
         this.size = size;
-        this.cubes = size*size;        
+        this.cubes = size*size;       
+        this.maxHeight = -1; 
+        this.minHeight = Number.MAX_SAFE_INTEGER;
         this.generateCubes();
+        this.generateCubeType();
     }
     
     private generateCubes() {
@@ -37,7 +43,9 @@ export class Chunk {
       for(let i= 0; i < this.size; i++) {
           for(let j= 0; j<this.size; j++) {
               const height = heightMap[i * this.size + j];
-
+              if(height>this.maxHeight) this.maxHeight = height;
+              if(height<this.minHeight) this.minHeight = height;
+              
               // get neighbors
               // todo: note that currently we still need to handle the boundary, but after we implement the boundary loading,
               // we can remove the boundary handling here, because you will never see the boundary
@@ -64,10 +72,32 @@ export class Chunk {
       this.cubePositionsF32 = new Float32Array(visibleCubes);
     }
     
+    private generateCubeType(){
+        // Generate cube type according to the position of chunk and cube height
+        //grass=0.0, marble=1.0,creek=2.0, snow mountain=3.0, stone in creek=4.0
+        const visibleCubeTypes = [];
+        for(var i=0;i<this.cubes;++i){
+            let h :number= this.cubePositionsF32[i*4+1]+1;
+            let hbarlow = 0.3*(this.maxHeight-this.minHeight)+this.minHeight;
+            let hbarhigh = 0.85*(this.maxHeight-this.minHeight)+this.minHeight;
+            let grass = 0.0 ;
+            let marble = Number(h>hbarlow && h<hbarhigh && Math.abs(this.y/64)%2==0 && Math.abs(this.x/64)%2==0)*1.0 ;
+            let creek = Number(h>=0.65*hbarlow && h<=hbarlow)*2.0;
+            let snow = Number(h>=hbarhigh)*3.0 ;
+            let stone = Number(h<0.65*hbarlow)*4.0 ;
+            let res = grass+marble+creek+snow+stone ;
+            visibleCubeTypes.push(res);
+        }
+        this.cubeTypeF32 = new Float32Array(visibleCubeTypes);
+    }
+
     public cubePositions(): Float32Array {
         return this.cubePositionsF32;
     }
-    
+
+    public cubeTypes(): Float32Array {
+        return this.cubeTypeF32;
+    }
     
     public numCubes(): number {
         return this.cubes;
