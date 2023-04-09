@@ -11,7 +11,7 @@ class ValueNoise {
     private rng: Rand;
     private readonly patch_size: number;
     private readonly chunk_size: number;
-    public patch_values: Float32Array;
+    // public patch_values: Float32Array;
     private padded_patch_values: Float32Array;
     static readonly HEIGHT_SCALE = 100;
 
@@ -23,10 +23,10 @@ class ValueNoise {
         this.patch_size = patch_size;
         this.chunk_size = chunk_size;
 
-        this.patch_values = new Float32Array(patch_size * patch_size);
-        for (let i = 0; i < patch_size * patch_size; i++) {
-            this.patch_values[i] = ValueNoise.HEIGHT_SCALE * this.rng.next();
-        }
+        // this.patch_values = new Float32Array(patch_size * patch_size);
+        // for (let i = 0; i < patch_size * patch_size; i++) {
+        //     this.patch_values[i] = ValueNoise.HEIGHT_SCALE * this.rng.next();
+        // }
 
         this.pad_patch();
     }
@@ -41,7 +41,7 @@ class ValueNoise {
         // from patch_values
         for (let i = 0; i < this.patch_size; i++) {
             for (let j = 0; j < this.patch_size; j++) {
-                this.padded_patch_values[(i + 1) * padded_size + j + 1] = this.patch_values[i * this.patch_size + j];
+                this.padded_patch_values[(i + 1) * padded_size + j + 1] = ValueNoise.HEIGHT_SCALE * this.rng.next(); //this.patch_values[i * this.patch_size + j];
             }
         }
 
@@ -139,28 +139,19 @@ class ValueNoise {
     }
 
     public generateHeightMap(): Float32Array {
-        // the padded patch is a 2D array of size (patch_size + 2) * (patch_size + 2), in our case, 10 x 10
+        // the padded patch is a 2D array of size (patch_size + 2) * (patch_size + 2), for example, when patch_size = 8,
         // original we upsample the 8 x 8 patch to 64 x 64, so now the new upsampled chunk will be 80 x 80,
         // and we will need the inner 64 x 64
         const upsample_factor = this.chunk_size / this.patch_size;
         let padded_chunk_size = upsample_factor * (this.patch_size + 2);
         let padded_height_map = new Float32Array(padded_chunk_size * padded_chunk_size);
-        // let height_map = new Float32Array(this.chunk_size * this.chunk_size);
-        // let frequency = 1.0 / (4 * upsample_factor);  // 1/ (8 * upsample_factor) so 1/8, 1/4, 1/2, 1 => 4 octaves
-        // const frequency_multiplier = 2;
-        // const amplitude_multiplier = 5;
-        // const num_octaves = 3;
 
-        // for (let j = 0; j < this.chunk_size; j++) {
-        //     for (let i = 0; i < this.chunk_size; i++) {
         for (let j = 0; j < padded_chunk_size; j++) {
             for (let i = 0; i < padded_chunk_size; i++) {
                 let x = i / upsample_factor;
                 let y = j / upsample_factor;
 
                 padded_height_map[j * padded_chunk_size + i] = Math.min(1/8 * this.eval(x, y), 100);
-                // height_map[j * this.chunk_size + i] = Math.min(Math.floor(height), 100);
-                // padded_height_map[j * padded_chunk_size + i] = Math.min(Math.floor(height), 100);  // todo: add floor back here
             }
         }
 
