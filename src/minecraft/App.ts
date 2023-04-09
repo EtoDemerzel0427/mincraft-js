@@ -166,10 +166,10 @@ export class MinecraftAnimation extends CanvasAnimation {
     );
 
     this.blankCubeRenderPass.addInstancedAttribute("blockType",
-    4,
+    1,
     this.ctx.FLOAT,
     false,
-    4 * Float32Array.BYTES_PER_ELEMENT,
+    1 * Float32Array.BYTES_PER_ELEMENT,
     0,
     undefined,
     new Float32Array(0)

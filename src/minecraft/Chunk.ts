@@ -82,11 +82,11 @@ export class Chunk {
             let hbarhigh = 0.85*(this.maxHeight-this.minHeight)+this.minHeight;
             let grass = 0.0 ;
             let marble = Number(h>hbarlow && h<hbarhigh && Math.abs(this.y/64)%2==0 && Math.abs(this.x/64)%2==0)*1.0 ;
-            let creek = Number(h>=0.6*hbarlow && h<=hbarlow)*2.0;
+            let creek = Number(h>=0.65*hbarlow && h<=hbarlow)*2.0;
             let snow = Number(h>=hbarhigh)*3.0 ;
-            let stone = Number(h<0.6*hbarlow)*4.0 ;
+            let stone = Number(h<0.65*hbarlow)*4.0 ;
             let res = grass+marble+creek+snow+stone ;
-            visibleCubeTypes.push(res,res,res,res);
+            visibleCubeTypes.push(res);
         }
         this.cubeTypeF32 = new Float32Array(visibleCubeTypes);
     }
