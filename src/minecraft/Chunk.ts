@@ -59,9 +59,9 @@ export class Chunk {
               // render from min + 1 to height
               // if the current height is lower than all its neighbors, we just render the uppermost cube
               for (let k = Math.min(min + 1, height) ; k <= height; k++) {
-                  visibleCubes.push(topleftx + j);
+                  visibleCubes.push(topleftx + i);
                   visibleCubes.push(k);
-                  visibleCubes.push(toplefty + i);
+                  visibleCubes.push(toplefty + j);
                   visibleCubes.push(0.0);
               }
           }
@@ -111,5 +111,16 @@ export class Chunk {
             return -1;
         }
         return this.heightMap[x * this.size + y];
+    }
+
+    // for debug
+    public printHeightMap() {
+        for(let i = 0; i < this.size; i++) {
+            let str = "";
+            for(let j = 0; j < this.size; j++) {
+                str += this.heightMap[i * this.size + j] + " ";
+            }
+            console.log(str);
+        }
     }
 }

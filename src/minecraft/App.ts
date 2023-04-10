@@ -73,6 +73,9 @@ export class MinecraftAnimation extends CanvasAnimation {
       }
     }
 
+    // print the heightmap of (0, 64) chunk
+    // this.chunks.get("0,64").printHeightMap();
+
     this.curMinHeight = this.getMinStandingHeight(this.playerPosition.x, this.playerPosition.z)
     this.lastTimeStamp = Date.now();
     this.vertical_velocity = 0;
@@ -190,7 +193,7 @@ export class MinecraftAnimation extends CanvasAnimation {
         const dist_y = y - test_y;
         const distance = Math.sqrt((dist_x * dist_x) + (dist_y * dist_y));
 
-        if (distance <= 0.4) {
+        if (distance <= MinecraftAnimation.PLAYER_RADIUS) {
           // the circle intersects with the square
           // we need to check if the height of the square is higher than the current min height
           let height = chunk.getHeight(cellX - topleftX, cellY - topleftY);
@@ -305,18 +308,25 @@ export class MinecraftAnimation extends CanvasAnimation {
 
   private updatePlayerPosition(delta_time: number): void {
     // vertical movement
-    if (this.playerPosition.y > this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT) {
+    if (this.playerPosition.y > this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT || this.vertical_velocity > 0) {
         // falling
         this.vertical_velocity -= 9.8 * delta_time;
-        this.playerPosition.y += (this.vertical_velocity - MinecraftAnimation.GRAVITY * delta_time / 2) * delta_time;  // accurate, since the delta time is small, you can also use this.vertical_velocity * delta_time
+        this.playerPosition.y += (this.vertical_velocity + MinecraftAnimation.GRAVITY * delta_time / 2) * delta_time;  // accurate, since the delta time is small, you can also use this.vertical_velocity * delta_time
         this.playerPosition.y = Math.max(this.playerPosition.y, this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT);
     } else {
-        // standing on the ground
-        this.vertical_velocity = 0;
+      // standing on the ground
+      this.vertical_velocity = 0;
+      this.playerPosition.y = this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT;
+
     }
 
     const next_pos = this.playerPosition.copy().add(this.gui.walkDir());
     const next_min_height = this.getMinStandingHeight(next_pos.x, next_pos.z);
+
+    // debug code
+    // console.log("cur_pos: " + this.playerPosition.x + ", " + this.playerPosition.y + ", " + this.playerPosition.z);
+    // console.log("next_pos: " + next_pos.x + ", " + next_pos.y + ", " + next_pos.z);
+    // console.log("next_min_height: " + next_min_height);
 
     if (next_pos.y >= next_min_height + MinecraftAnimation.PLAYER_HEIGHT) {
         // no collision, update the position
@@ -391,6 +401,11 @@ export class MinecraftAnimation extends CanvasAnimation {
 
   public jump() {
       //TODO: If the player is not already in the lair, launch them upwards at 10 units/sec.
+      if (this.playerPosition.y <= this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT) {
+          this.vertical_velocity = 10;
+      } else {
+         console.log(this.playerPosition.y, this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT);
+      }
   }
 }
 
