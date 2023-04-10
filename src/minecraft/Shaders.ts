@@ -2,6 +2,8 @@ export const blankCubeVSText = `
     precision mediump float;
 
     uniform vec4 uLightPos;    
+    uniform vec3 lightColor;
+    uniform vec3 ambientColor;
     uniform mat4 uView;
     uniform mat4 uProj;
     
@@ -35,6 +37,8 @@ export const blankCubeFSText = `
     precision mediump float;
 
     uniform vec4 uLightPos;
+    uniform vec3 lightColor;
+    uniform vec3 ambientColor;
     
     varying vec4 normal;
     varying vec4 wsPos;
@@ -123,8 +127,8 @@ export const blankCubeFSText = `
     }
 
     void main() {
-        vec3 kd = vec3(1.0, 1.0, 1.0);
-        vec3 ka = vec3(0.1, 0.1, 0.1);
+        vec3 kd = lightColor;
+        vec3 ka = ambientColor;
         float size  = 32.0; // smaller, faster
 
         /* Compute light fall off */
@@ -132,34 +136,30 @@ export const blankCubeFSText = `
         float dot_nl = dot(normalize(lightDirection), normalize(normal));
 	    dot_nl = clamp(dot_nl, 0.0, 1.0);
         
-        if(dot_nl!=0.0){
-            float p = perlin_texture(uv.x, uv.y, size, seed);
-            vec3 pv;
+        float p = perlin_texture(uv.x, uv.y, size, seed);
+        vec3 pv;
 
-            if(cubeType==0.0){                                        //grass
-               p = clamp(p,0.8,1.0);
-               if(normal.x==0.0 && normal.z==0.0) {pv = vec3(0.13, 0.545*p, 0.13);}
-               else {pv = vec3(0.61*p, 0.29, 0.07);}
-            }else if(cubeType==1.0){                                 //marble place
-                p =  marble_texture(uv,p,5.0);
-                pv = vec3(0.95*p,0.95*p,0.95*p);
-            }else if(cubeType==2.0){                                 //creek
-                p = marble_texture(uv,p,1.2);
-                pv= vec3(0.1176*p,0.565*p,1.0*p);
-            }else if(cubeType==3.0){                                 //snow cover
-                p =  clamp(p+0.1,0.0,1.0);
-                pv= vec3(0.94*p,p,p);
-            }else if(cubeType==4.0){                                 //stone in creek
-                if(normal.x==0.0 && normal.z==0.0)
-                {p = circle_texture(uv,p);pv = vec3(0.82*p, 0.70*p, 0.55*p);}
-                else 
-                {p = marble_texture(uv,p,1.2); pv= vec3(0.1176*p,0.565*p,1.0*p);}
-            }
-            gl_FragColor = vec4(clamp(ka + dot_nl * kd* pv, 0.0, 1.0), 1.0);
+        if(cubeType==0.0){                                        //grass
+            p = clamp(p,0.8,1.0);
+            if(normal.x==0.0 && normal.z==0.0) {pv = vec3(0.13, 0.545*p, 0.13);}
+            else {pv = vec3(0.61*p, 0.29, 0.07);}
+        }else if(cubeType==1.0){                                 //marble place
+            p =  marble_texture(uv,p,5.0);
+            pv = vec3(0.95*p,0.95*p,0.95*p);
+        }else if(cubeType==2.0){                                 //creek
+            p = marble_texture(uv,p,1.2);
+            pv= vec3(0.1176*p,0.565*p,1.0*p);
+        }else if(cubeType==3.0){                                 //snow cover
+            p =  clamp(p+0.1,0.0,1.0);
+            pv= vec3(0.94*p,p,p);
+        }else if(cubeType==4.0){                                 //stone in creek
+            if(normal.x==0.0 && normal.z==0.0)
+            {p = circle_texture(uv,p);pv = vec3(0.82*p, 0.70*p, 0.55*p);}
+            else 
+            {p = marble_texture(uv,p,1.2); pv= vec3(0.1176*p,0.565*p,1.0*p);}
         }
-        else{
-            gl_FragColor = vec4(clamp(ka + dot_nl * kd, 0.0, 1.0), 1.0);
-        }
+        ka = ka*pv;
+        gl_FragColor = vec4(clamp(ka+clamp(dot_nl * kd* pv, 0.0, 1.0),0.0, 1.0),1.0);
     }
 `;
 

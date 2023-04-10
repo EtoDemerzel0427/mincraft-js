@@ -185,6 +185,9 @@ export class GUI implements IGUI {
         this.animation.jump();
         break;
       }
+      case "KeyC": {
+        break;
+      }
       default: {
         console.log("Key : '", key.code, "' was pressed.");
         break;
@@ -208,6 +211,28 @@ export class GUI implements IGUI {
       }
       case "KeyD": {
         this.Ddown = false;
+        break;
+      }
+      case "KeyC":{
+        const theta = 2*Math.PI/24.0; // angle/hour
+        this.animation.angle = (this.animation.angle+theta)>(2*Math.PI)?(this.animation.angle+theta-2*Math.PI):(this.animation.angle+theta);
+        this.animation.lightPosition = new Vec4([Math.sin(this.animation.angle)*this.animation.sunRadius,
+        Math.cos(this.animation.angle)*this.animation.sunRadius,
+        Math.sin(this.animation.angle)*this.animation.sunRadius,
+        1.0]);
+        if(this.animation.angle<=(10/6*Math.PI) ||this.animation.angle>=(1/3*Math.PI)){
+          this.animation.lightColor = new Vec3([1.0,0.95,0.95]);//new Vec3([0.2,0.1,0.1]);//more red at morning and afternoon
+        }else{
+          this.animation.lightColor =new Vec3([1.0,1.0,1.0]); //new Vec3([0.1,0.1,0.1]);
+        }
+
+        if(this.animation.angle>=(Math.PI/2) && this.animation.angle<=(3/2*Math.PI)){
+          this.animation.ambientColor = new Vec3([0.05,0.05,0.05]);// darker at night
+        }else{
+          this.animation.ambientColor = new Vec3([0.5,0.5,0.5]);// lighter at daytime
+        }
+        
+        console.log("new position: ",this.animation.lightPosition.x,this.animation.lightPosition.y,this.animation.lightPosition.z);
         break;
       }
     }

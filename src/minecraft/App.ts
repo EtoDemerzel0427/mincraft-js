@@ -26,7 +26,11 @@ export class MinecraftAnimation extends CanvasAnimation {
   private blankCubeRenderPass: RenderPass;
 
   /* Global Rendering Info */
-  private lightPosition: Vec4;
+  public sunRadius: number;
+  public angle: number;
+  public lightPosition: Vec4;
+  public lightColor:Vec3;
+  public ambientColor:Vec3;
   private backgroundColor: Vec4;
 
   private canvas2d: HTMLCanvasElement;
@@ -77,7 +81,15 @@ export class MinecraftAnimation extends CanvasAnimation {
     this.cubeGeometry = new Cube();
     this.initBlankCube();
 
-    this.lightPosition = new Vec4([-1000, 1000, -1000, 1]);
+    this.lightColor = new Vec3([1.0,1.0,1.0]);
+    this.ambientColor = new Vec3([0.1,0.1,0.1]);
+    this.angle = 7.0*2.0*Math.PI/8.0+Math.PI/18.0;
+    this.sunRadius = 1000*Math.sqrt(2);
+    this.lightPosition = new Vec4([Math.sin(this.angle)*this.sunRadius,
+                                  Math.cos(this.angle)*this.sunRadius,
+                                  Math.sin(this.angle)*this.sunRadius,
+                                  1.0]);
+    //this.lightPosition = new Vec4([-1000, 1000, -1000, 1]);
     this.backgroundColor = new Vec4([0.0, 0.37254903, 0.37254903, 1.0]);
   }
 
@@ -269,6 +281,14 @@ export class MinecraftAnimation extends CanvasAnimation {
     this.blankCubeRenderPass.addUniform("uLightPos",
       (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
         gl.uniform4fv(loc, this.lightPosition.xyzw);
+    });
+    this.blankCubeRenderPass.addUniform("lightColor",
+    (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+      gl.uniform3fv(loc, this.lightColor.xyz);
+    });
+    this.blankCubeRenderPass.addUniform("ambientColor",
+    (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+      gl.uniform3fv(loc, this.ambientColor.xyz);
     });
     this.blankCubeRenderPass.addUniform("uProj",
       (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
