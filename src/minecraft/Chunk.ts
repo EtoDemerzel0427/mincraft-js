@@ -1,11 +1,7 @@
-import {Mat3, Mat4, Vec2, Vec3, Vec4} from "../lib/TSM.js";
-import Rand from "../lib/rand-seed/Rand.js"
-// import ValueNoise from "./noise.js";
-import MultiOctaveNoise from "./noise.js";
+// import {Mat3, Mat4, Vec2, Vec3, Vec4} from "../lib/TSM.js";
+// import Rand from "../lib/rand-seed/Rand.js"
 
-function lerp(lo: number, hi: number, t: number): number {
-    return lo * (1 - t) + hi * t;
-}
+import MultiOctaveNoise from "./noise.js";
 
 
 export class Chunk {
@@ -17,6 +13,9 @@ export class Chunk {
     private size: number; // Number of cubes along each side of the chunk
     private maxHeight: number;
     private minHeight: number;
+    private heightMap: Float32Array;
+    static readonly PLAYER_RADIUS = 0.4;
+    static readonly PLAYER_HEIGHT = 2.0;
     
     constructor(centerX : number, centerY : number, size: number) {
         this.x = centerX;
@@ -38,21 +37,21 @@ export class Chunk {
 
       // let noises = new ValueNoise(this.x, this.y, 8, 64);
       let noises = new MultiOctaveNoise(this.x, this.y, this.size, [2, 4, 8]);
-      const heightMap = noises.generateHeightMap();
+      this.heightMap = noises.generateHeightMap();
 
       for(let i= 0; i < this.size; i++) {
-          for(let j= 0; j<this.size; j++) {
-              const height = heightMap[i * this.size + j];
-              if(height>this.maxHeight) this.maxHeight = height;
-              if(height<this.minHeight) this.minHeight = height;
+          for(let j= 0; j < this.size; j++) {
+              const height = this.heightMap[i * this.size + j];
+              if(height > this.maxHeight) this.maxHeight = height;
+              if(height < this.minHeight) this.minHeight = height;
               
               // get neighbors
               // todo: note that currently we still need to handle the boundary, but after we implement the boundary loading,
               // we can remove the boundary handling here, because you will never see the boundary
-              const left = (j == 0) ? 0 : heightMap[i * this.size + j - 1];
-              const right = (j == this.size - 1) ? 0: heightMap[i * this.size + j + 1];
-              const up = (i == 0) ? 0: heightMap[(i - 1) * this.size + j];
-              const down = (i == this.size - 1) ? 0: heightMap[(i + 1) * this.size + j];
+              const left = (j == 0) ? 0 : this.heightMap[i * this.size + j - 1];
+              const right = (j == this.size - 1) ? 0: this.heightMap[i * this.size + j + 1];
+              const up = (i == 0) ? 0: this.heightMap[(i - 1) * this.size + j];
+              const down = (i == this.size - 1) ? 0: this.heightMap[(i + 1) * this.size + j];
 
               // get the minimum height of the neighbors
               const min = Math.min(left, right, up, down);
@@ -76,15 +75,15 @@ export class Chunk {
         // Generate cube type according to the position of chunk and cube height
         //grass=0.0, marble=1.0,creek=2.0, snow mountain=3.0, stone in creek=4.0
         const visibleCubeTypes = [];
-        for(var i=0;i<this.cubes;++i){
-            let h :number= this.cubePositionsF32[i*4+1]+1;
-            let heightRange = (this.maxHeight-this.minHeight)+this.minHeight;
+        for(let i=0; i < this.cubes; ++i){
+            let h :number= this.cubePositionsF32[i * 4 + 1] + 1;
+            let heightRange = (this.maxHeight - this.minHeight) + this.minHeight;
             let grass = 0.0 ;
-            let marble = Number(h>0.4* heightRange && h<0.5*heightRange )*1.0 ;
-            let creek = Number(h>=0.25*heightRange && h<=0.3*heightRange)*2.0;
-            let snow = Number(h>=0.85*heightRange)*3.0 ;
-            let stone = Number(h<0.25*heightRange)*4.0 ;
-            let res = grass+marble+creek+snow+stone ;
+            let marble = Number(h > 0.4 * heightRange && h < 0.5 * heightRange) ;
+            let creek = Number(h >= 0.25 * heightRange && h <= 0.3 * heightRange) * 2.0;
+            let snow = Number(h >= 0.85 * heightRange) * 3.0 ;
+            let stone = Number(h < 0.25 * heightRange) * 4.0 ;
+            let res = grass + marble + creek + snow + stone ;
             visibleCubeTypes.push(res);
         }
         this.cubeTypeF32 = new Float32Array(visibleCubeTypes);
@@ -100,5 +99,17 @@ export class Chunk {
     
     public numCubes(): number {
         return this.cubes;
+    }
+
+    /**
+     * Get the height of the chunk at the given x, y position
+     * @param x the x position from the top left corner of the chunk
+     * @param y the y position from the top left corner of the chunk
+     */
+    public getHeight(x: number, y: number): number {
+        if (x < 0 || x >= this.size || y < 0 || y >= this.size) {
+            return -1;
+        }
+        return this.heightMap[x * this.size + y];
     }
 }

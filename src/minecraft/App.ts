@@ -34,6 +34,13 @@ export class MinecraftAnimation extends CanvasAnimation {
   // Player's head position in world coordinate.
   // Player should extend two units down from this location, and 0.4 units radially.
   private playerPosition: Vec3;
+  private curMinHeight: number;
+  private lastTimeStamp: number;
+  private vertical_velocity: number;
+  static readonly CHUNK_SIZE = 64;
+  static readonly PLAYER_HEIGHT = 2.0;
+  static readonly PLAYER_RADIUS = 0.4;
+  static GRAVITY = -9.8;
 
 
   constructor(canvas: HTMLCanvasElement) {
@@ -47,17 +54,6 @@ export class MinecraftAnimation extends CanvasAnimation {
     this.gui = new GUI(this.canvas2d, this);
     this.playerPosition = this.gui.getCamera().pos();
 
-    // Generate initial landscape
-    // Generate the 3x3 chunks around the player (starting from (0,0)
-    // each chunk is 64 x 64
-    // todo: to do lazy loading, this should be changed to a map of chunks
-    // now for simplicity, we just generate all the chunks in an array
-    // this.chunks = [];
-    // for (let i = -1; i <= 1; i++) {
-    //   for (let j = -1; j <= 1; j++) {
-    //     this.chunks.push(new Chunk(i * 64, j * 64, 64));
-    //   }
-    // }
     this.chunks = new Map();
 
     // find the chunk that the player is in (the center of the 3x3 chunks)
@@ -72,6 +68,10 @@ export class MinecraftAnimation extends CanvasAnimation {
         this.chunks.set(key, new Chunk(centerX, centerY, 64));
       }
     }
+
+    this.curMinHeight = this.getMinStandingHeight(this.playerPosition.x, this.playerPosition.z)
+    this.lastTimeStamp = Date.now();
+    this.vertical_velocity = 0;
 
     this.blankCubeRenderPass = new RenderPass(gl, blankCubeVSText, blankCubeFSText);
     this.cubeGeometry = new Cube();
@@ -108,6 +108,94 @@ export class MinecraftAnimation extends CanvasAnimation {
     }
   }
 
+  /**
+   * Given the global coordinates of a point, return the height of the current cell.
+   * This function is only called for points around the player, so the chunk must be in the map.
+   * @param x
+   * @param y
+   * @private
+   */
+  private getHeightFromGlobalCoordinates(x: number, y: number): number {
+    // get the chunk that includes the point
+    const cur_chunk_x = Math.round(x / 64) * 64;
+    const cur_chunk_y = Math.round(y / 64) * 64;
+
+    const chunk = this.chunks.get(`${cur_chunk_x},${cur_chunk_y}`);
+    if (!chunk) {
+      // if implementation is correct, this should never happen
+      throw new Error("Chunk not found");
+    }
+
+    // get the coordinates of the point in the chunk
+    const topleftX = cur_chunk_x - MinecraftAnimation.CHUNK_SIZE / 2;
+    const topleftY = cur_chunk_y - MinecraftAnimation.CHUNK_SIZE / 2;
+
+    const curCellX = Math.floor(x - topleftX);
+    const curCellY = Math.floor(y - topleftY);
+
+    return chunk.getHeight(curCellX, curCellY);
+  }
+
+  /**
+   * Given the global coordinates of a point, return the minimum height that the player can stand on.
+   * @param x
+   * @param y Note that in WebGL, y is the vertical axis, so this is actually the z coordinate.
+   * @private
+   */
+  private getMinStandingHeight(x: number, y: number): number {
+    const cur_height = this.getHeightFromGlobalCoordinates(x, y);
+    const curCellX = Math.floor(x);
+    const curCellY = Math.floor(y);
+
+    // the center of the chunk that the player is in
+    const cur_chunk_x = Math.round(x / 64) * 64;
+    const cur_chunk_y = Math.round(y / 64) * 64;
+
+    const topleftX = cur_chunk_x - MinecraftAnimation.CHUNK_SIZE / 2;
+    const topleftY = cur_chunk_y - MinecraftAnimation.CHUNK_SIZE / 2;
+
+    const chunk = this.chunks.get(`${cur_chunk_x},${cur_chunk_y}`);  // for most of the time, this should be the chunk for every neighbor (except the boundary)
+
+    // iterate through all the cubes around the player
+    // check if the circle of radius 0.4 intersects with the cubes and update the min height
+    let min_height = cur_height;
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        if (i === 0 && j === 0) continue;  // this case is handled above
+        // the global coordinates of the square's top left corner
+        const cellX = curCellX + i;
+        const cellY = curCellY + j;
+
+        // test if the circle intersects with the square
+        let test_x = x;
+        let test_y = y;
+        if (x < cellX) test_x = cellX;
+        else if (x > cellX + 1) test_x = cellX + 1;
+        if (y < cellY) test_y = cellY;
+        else if (y > cellY + 1) test_y = cellY + 1;
+
+        const dist_x = x - test_x;
+        const dist_y = y - test_y;
+        const distance = Math.sqrt((dist_x * dist_x) + (dist_y * dist_y));
+
+        if (distance <= 0.4) {
+          // the circle intersects with the square
+          // we need to check if the height of the square is higher than the current min height
+          let height = chunk.getHeight(cellX - topleftX, cellY - topleftY);
+          if (height === -1) {
+            // cross chunk, need the neighboring chunk's heightMap
+            height = this.getHeightFromGlobalCoordinates(cellX, cellY);
+          }
+          if (height > min_height) {
+            min_height = height;
+          }
+        }
+      }
+    }
+
+    return min_height;
+  }
+
 
   /**
    * Setup the simulation. This can be called again to reset the program.
@@ -117,6 +205,9 @@ export class MinecraftAnimation extends CanvasAnimation {
 
       this.playerPosition = this.gui.getCamera().pos();
       this.updateChunks();
+
+      this.lastTimeStamp = Date.now();
+      this.vertical_velocity = 0;
   }
 
 
@@ -169,7 +260,7 @@ export class MinecraftAnimation extends CanvasAnimation {
     1,
     this.ctx.FLOAT,
     false,
-    1 * Float32Array.BYTES_PER_ELEMENT,
+    Float32Array.BYTES_PER_ELEMENT,
     0,
     undefined,
     new Float32Array(0)
@@ -192,6 +283,31 @@ export class MinecraftAnimation extends CanvasAnimation {
     this.blankCubeRenderPass.setup();
   }
 
+  private updatePlayerPosition(delta_time: number): void {
+    // vertical movement
+    if (this.playerPosition.y > this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT) {
+        // falling
+        this.vertical_velocity -= 9.8 * delta_time;
+        this.playerPosition.y += (this.vertical_velocity - MinecraftAnimation.GRAVITY * delta_time / 2) * delta_time;  // accurate, since the delta time is small, you can also use this.vertical_velocity * delta_time
+        this.playerPosition.y = Math.max(this.playerPosition.y, this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT);
+    } else {
+        // standing on the ground
+        this.vertical_velocity = 0;
+    }
+
+    const next_pos = this.playerPosition.copy().add(this.gui.walkDir());
+    const next_min_height = this.getMinStandingHeight(next_pos.x, next_pos.z);
+
+    if (next_pos.y >= next_min_height + MinecraftAnimation.PLAYER_HEIGHT) {
+        // no collision, update the position
+        this.playerPosition = next_pos;
+        this.curMinHeight = next_min_height;
+    } else {
+        // collision, stop the player
+        console.log("collision");
+    }
+  }
+
 
 
   /**
@@ -200,7 +316,10 @@ export class MinecraftAnimation extends CanvasAnimation {
    */
   public draw(): void {
     //TODO: Logic for a rudimentary walking simulator. Check for collisions and reject attempts to walk into a cube. Handle gravity, jumping, and loading of new chunks when necessary.
-    this.playerPosition.add(this.gui.walkDir());
+    const curTime = Date.now();
+    const dt = (curTime - this.lastTimeStamp) / 1000;
+    // this.playerPosition.add(this.gui.walkDir());
+    this.updatePlayerPosition(dt);
     this.updateChunks();
 
     this.gui.getCamera().setPos(this.playerPosition);
@@ -217,6 +336,8 @@ export class MinecraftAnimation extends CanvasAnimation {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); // null is the default frame buffer
     this.drawScene(0, 0, 1280, 960);
+
+    this.lastTimeStamp = curTime;
   }
 
   private drawScene(x: number, y: number, width: number, height: number): void {
