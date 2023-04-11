@@ -42,6 +42,11 @@ export class GUI implements IGUI {
   private Sdown: boolean;
   private Ddown: boolean;
 
+  private run1: number;
+  private run2: number;
+  private run3: number;
+  private thetaPerHour: number;
+
   /**
    *
    * @param canvas required to get the width and height of the canvas
@@ -53,6 +58,7 @@ export class GUI implements IGUI {
     this.prevX = 0;
     this.prevY = 0;
     this.dragging = false;
+    this.thetaPerHour = 2*Math.PI/24.0;
     
     this.animation = animation;
     
@@ -138,7 +144,24 @@ export class GUI implements IGUI {
         this.camera.rotate(this.camera.right(), -GUI.rotationSpeed*dy);
     }
   }
-  
+  public changeLight(theta:number): void{
+    this.animation.angle = (this.animation.angle+theta)>(2*Math.PI)?(this.animation.angle+theta-2*Math.PI):(this.animation.angle+theta);
+    this.animation.lightPosition = new Vec4([Math.sin(this.animation.angle)*this.animation.sunRadius,
+    Math.cos(this.animation.angle)*this.animation.sunRadius,
+    Math.sin(this.animation.angle)*this.animation.sunRadius,
+    1.0]);
+    if(this.animation.angle<=(10/6*Math.PI) ||this.animation.angle>=(1/3*Math.PI)){
+      this.animation.lightColor = new Vec3([1.0,0.95,0.95]);//new Vec3([0.2,0.1,0.1]);//more red at morning and afternoon
+    }else{
+      this.animation.lightColor =new Vec3([1.0,1.0,1.0]); //new Vec3([0.1,0.1,0.1]);
+    }
+
+    if(this.animation.angle>=(Math.PI/2) && this.animation.angle<=(3/2*Math.PI)){
+      this.animation.ambientColor = new Vec3([0.05,0.05,0.05]);// darker at night
+    }else{
+      this.animation.ambientColor = new Vec3([0.5,0.5,0.5]);// lighter at daytime
+    }
+  }
   public walkDir(): Vec3
   {
       let answer = new Vec3;
@@ -188,6 +211,12 @@ export class GUI implements IGUI {
       case "KeyC": {
         break;
       }
+      case "Digit1":{
+        break;
+      }
+      case "Digit0":{
+        break;
+      }
       default: {
         console.log("Key : '", key.code, "' was pressed.");
         break;
@@ -213,28 +242,52 @@ export class GUI implements IGUI {
         this.Ddown = false;
         break;
       }
-      case "KeyC":{
-        const theta = 2*Math.PI/24.0; // angle/hour
-        this.animation.angle = (this.animation.angle+theta)>(2*Math.PI)?(this.animation.angle+theta-2*Math.PI):(this.animation.angle+theta);
-        this.animation.lightPosition = new Vec4([Math.sin(this.animation.angle)*this.animation.sunRadius,
-        Math.cos(this.animation.angle)*this.animation.sunRadius,
-        Math.sin(this.animation.angle)*this.animation.sunRadius,
-        1.0]);
-        if(this.animation.angle<=(10/6*Math.PI) ||this.animation.angle>=(1/3*Math.PI)){
-          this.animation.lightColor = new Vec3([1.0,0.95,0.95]);//new Vec3([0.2,0.1,0.1]);//more red at morning and afternoon
-        }else{
-          this.animation.lightColor =new Vec3([1.0,1.0,1.0]); //new Vec3([0.1,0.1,0.1]);
-        }
-
-        if(this.animation.angle>=(Math.PI/2) && this.animation.angle<=(3/2*Math.PI)){
-          this.animation.ambientColor = new Vec3([0.05,0.05,0.05]);// darker at night
-        }else{
-          this.animation.ambientColor = new Vec3([0.5,0.5,0.5]);// lighter at daytime
-        }
-        
-        console.log("new position: ",this.animation.lightPosition.x,this.animation.lightPosition.y,this.animation.lightPosition.z);
+      case "Digit1":{
+        window.clearInterval(this.run2);
+        window.clearInterval(this.run3);
+        var self = this;
+        // 30 s = 24 hours
+        this.run1 = setInterval(function () { 
+          self.changeLight(self.thetaPerHour*0.8*0.5);
+        }, 500);
         break;
       }
+      case "Digit2":{
+        window.clearInterval(this.run1);
+        window.clearInterval(this.run3);
+        var self = this;
+        // 1 min = 24 hours
+        this.run2 = setInterval(function () { 
+          self.changeLight(self.thetaPerHour*0.4*0.5);
+        }, 500);
+        break;
+      }
+      case "Digit3":{
+        window.clearInterval(this.run2);
+        window.clearInterval(this.run1);
+        var self = this;
+        // 2 min = 24 hours
+        this.run3 = setInterval(function () { 
+          self.changeLight(self.thetaPerHour*0.2*0.5);
+        }, 500);
+        break;
+      }
+      case "Digit0":{
+        // reset, and no day-night cycle
+        window.clearInterval(this.run1);
+        window.clearInterval(this.run2);
+        window.clearInterval(this.run3);
+        this.animation.lightColor = new Vec3([1.0,1.0,1.0]);
+        this.animation.ambientColor = new Vec3([0.1,0.1,0.1]);
+        this.animation.angle = 7.0*2.0*Math.PI/8.0+Math.PI/18.0;
+        this.animation.sunRadius = 1000*Math.sqrt(2);
+        this.animation.lightPosition = new Vec4([Math.sin(this.animation.angle)*this.animation.sunRadius,
+                                       Math.cos(this.animation.angle)*this.animation.sunRadius,
+                                       Math.sin(this.animation.angle)*this.animation.sunRadius,
+                                       1.0]);
+        break;
+      }
+
     }
   }  
 
