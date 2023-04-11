@@ -59,6 +59,7 @@ export class GUI implements IGUI {
     this.prevX = 0;
     this.prevY = 0;
     this.dragging = false;
+    this.Pdown = false;
     this.thetaPerHour = 2*Math.PI/24.0;
     
     this.animation = animation;

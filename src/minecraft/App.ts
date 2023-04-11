@@ -534,13 +534,17 @@ export class MinecraftAnimation extends CanvasAnimation {
     // this.blankCubeRenderPass.updateAttributeBuffer("aOffset", allPositions);
     // this.blankCubeRenderPass.drawInstanced(totalLength / 4);
     for (const chunk of this.chunks.values()) {
-      if(this.gui.PDownStatus()){
+      if (this.gui.PDownStatus()) {
         const inRanSeed = [];
         for(let i=0;i<chunk.numCubes();++i){
            let r = Math.round(Math.random()*100.0);
            inRanSeed.push(r);
         }
         let inSeedF32 = new Float32Array(inRanSeed);
+        this.blankCubeRenderPass.updateAttributeBuffer("inSeed", inSeedF32);
+      } else {
+        // make inseed a 0 array (size: numCubes)
+        const inSeedF32 = new Float32Array(chunk.numCubes()).fill(0);
         this.blankCubeRenderPass.updateAttributeBuffer("inSeed", inSeedF32);
       }
      
