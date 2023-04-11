@@ -12,6 +12,7 @@ export const blankCubeVSText = `
     attribute vec4 aOffset;
     attribute vec2 aUV;
     attribute float blockType;
+    attribute float inSeed;
     
     varying vec4 normal;
     varying vec4 wsPos;
@@ -28,7 +29,7 @@ export const blankCubeVSText = `
 
         // set seed, every vertex in the same cube has the same aOffset,
         // so vertices within the same cube has the same seed.
-        seed = aOffset.x*2.0 + aOffset.y*4.0 + aOffset.z*8.0;
+        seed = aOffset.x*2.0 + aOffset.y*4.0 + aOffset.z*8.0 + inSeed;
         cubeType = blockType;
     }
 `;

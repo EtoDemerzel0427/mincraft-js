@@ -183,6 +183,7 @@ class MinecraftAnimation extends CanvasAnimation {
         this.blankCubeRenderPass.addAttribute("aUV", 2, this.ctx.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, this.cubeGeometry.uvFlat());
         this.blankCubeRenderPass.addInstancedAttribute("aOffset", 4, this.ctx.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, new Float32Array(0));
         this.blankCubeRenderPass.addInstancedAttribute("blockType", 1, this.ctx.FLOAT, false, Float32Array.BYTES_PER_ELEMENT, 0, undefined, new Float32Array(0));
+        this.blankCubeRenderPass.addInstancedAttribute("inSeed", 1, this.ctx.FLOAT, false, Float32Array.BYTES_PER_ELEMENT, 0, undefined, new Float32Array(0));
         this.blankCubeRenderPass.addUniform("uLightPos", (gl, loc) => {
             gl.uniform4fv(loc, this.lightPosition.xyzw);
         });
@@ -317,6 +318,20 @@ class MinecraftAnimation extends CanvasAnimation {
         // this.blankCubeRenderPass.updateAttributeBuffer("aOffset", allPositions);
         // this.blankCubeRenderPass.drawInstanced(totalLength / 4);
         for (const chunk of this.chunks.values()) {
+            if (this.gui.PDownStatus()) {
+                const inRanSeed = [];
+                for (let i = 0; i < chunk.numCubes(); ++i) {
+                    let r = Math.round(Math.random() * 100.0);
+                    inRanSeed.push(r);
+                }
+                let inSeedF32 = new Float32Array(inRanSeed);
+                this.blankCubeRenderPass.updateAttributeBuffer("inSeed", inSeedF32);
+            }
+            else {
+                // make inseed a 0 array (size: numCubes)
+                const inSeedF32 = new Float32Array(chunk.numCubes()).fill(0);
+                this.blankCubeRenderPass.updateAttributeBuffer("inSeed", inSeedF32);
+            }
             this.blankCubeRenderPass.updateAttributeBuffer("aOffset", chunk.cubePositions());
             this.blankCubeRenderPass.updateAttributeBuffer("blockType", chunk.cubeTypes());
             this.blankCubeRenderPass.drawInstanced(chunk.cubePositions().length / 4);
