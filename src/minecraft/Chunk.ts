@@ -59,9 +59,9 @@ export class Chunk {
               // render from min + 1 to height
               // if the current height is lower than all its neighbors, we just render the uppermost cube
               for (let k = Math.min(min + 1, height) ; k <= height; k++) {
-                  visibleCubes.push(topleftx + i);
+                  visibleCubes.push(topleftx + j);
                   visibleCubes.push(k);
-                  visibleCubes.push(toplefty + j);
+                  visibleCubes.push(toplefty + i);
                   visibleCubes.push(0.0);
               }
           }
@@ -103,6 +103,7 @@ export class Chunk {
 
     /**
      * Get the height of the chunk at the given x, y position
+     * note that this height map is the transpose of the real x, y position
      * @param x the x position from the top left corner of the chunk
      * @param y the y position from the top left corner of the chunk
      */
@@ -110,7 +111,7 @@ export class Chunk {
         if (x < 0 || x >= this.size || y < 0 || y >= this.size) {
             return -1;
         }
-        return this.heightMap[x * this.size + y];
+        return this.heightMap[y * this.size + x];
     }
 
     // for debug
