@@ -41,6 +41,7 @@ export class GUI implements IGUI {
   private Wdown: boolean;
   private Sdown: boolean;
   private Ddown: boolean;
+  private Pdown: boolean;
 
   private run1: number;
   private run2: number;
@@ -127,6 +128,10 @@ export class GUI implements IGUI {
   public dragEnd(mouse: MouseEvent): void {
       this.dragging = false;
   }
+
+  public PDownStatus():boolean {
+    return this.Pdown;
+}
   
   /**
    * The callback function for a drag event.
@@ -220,6 +225,10 @@ export class GUI implements IGUI {
       case "Digit0":{
         break;
       }
+      case "KeyP":{
+        this.Pdown = true;
+        break;
+      }
       default: {
         console.log("Key : '", key.code, "' was pressed.");
         break;
@@ -243,6 +252,10 @@ export class GUI implements IGUI {
       }
       case "KeyD": {
         this.Ddown = false;
+        break;
+      }
+      case "KeyP": {
+        this.Pdown = false;
         break;
       }
       case "Digit1":{

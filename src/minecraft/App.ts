@@ -305,6 +305,16 @@ export class MinecraftAnimation extends CanvasAnimation {
     new Float32Array(0)
   );
 
+    this.blankCubeRenderPass.addInstancedAttribute("inSeed",
+    1,
+    this.ctx.FLOAT,
+    false,
+    Float32Array.BYTES_PER_ELEMENT,
+    0,
+    undefined,
+    new Float32Array(0)
+    );
+
     this.blankCubeRenderPass.addUniform("uLightPos",
       (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
         gl.uniform4fv(loc, this.lightPosition.xyzw);
@@ -524,6 +534,16 @@ export class MinecraftAnimation extends CanvasAnimation {
     // this.blankCubeRenderPass.updateAttributeBuffer("aOffset", allPositions);
     // this.blankCubeRenderPass.drawInstanced(totalLength / 4);
     for (const chunk of this.chunks.values()) {
+      if(this.gui.PDownStatus()){
+        const inRanSeed = [];
+        for(let i=0;i<chunk.numCubes();++i){
+           let r = Math.round(Math.random()*100.0);
+           inRanSeed.push(r);
+        }
+        let inSeedF32 = new Float32Array(inRanSeed);
+        this.blankCubeRenderPass.updateAttributeBuffer("inSeed", inSeedF32);
+      }
+     
       this.blankCubeRenderPass.updateAttributeBuffer("aOffset", chunk.cubePositions());
       this.blankCubeRenderPass.updateAttributeBuffer("blockType", chunk.cubeTypes());
       this.blankCubeRenderPass.drawInstanced(chunk.cubePositions().length / 4);
