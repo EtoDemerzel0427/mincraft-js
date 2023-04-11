@@ -1,12 +1,13 @@
 // import {Mat3, Mat4, Vec2, Vec3, Vec4} from "../lib/TSM.js";
-// import Rand from "../lib/rand-seed/Rand.js"
-
+import Rand from "../lib/rand-seed/Rand.js"
 import MultiOctaveNoise from "./noise.js";
 
 
 export class Chunk {
     private cubes: number; // Number of cubes that should be *drawn* each frame
     private cubePositionsF32: Float32Array; // (4 x cubes) array of cube translations, in homogeneous coordinates
+    private grassPositionsF32: Float32Array;
+    private rockPositionsF32: Float32Array;
     private cubeTypeF32: Float32Array; // the type of cube (grass=0.0, marble=1.0,creek=2.0, snow mountain=3.0,  stone in creek=4.0)
     private x : number; // Center of the chunk
     private y : number;
@@ -26,6 +27,7 @@ export class Chunk {
         this.minHeight = Number.MAX_SAFE_INTEGER;
         this.generateCubes();
         this.generateCubeType();
+        this.generateGrass();
     }
     
     private generateCubes() {
@@ -88,6 +90,48 @@ export class Chunk {
         }
         this.cubeTypeF32 = new Float32Array(visibleCubeTypes);
     }
+
+    public generateGrass(){
+        const visibleGrassPos = [];
+        const visibleRockPos= [];
+        for(let i=0;i<this.cubes;++i){
+            if(this.cubeTypeF32[i]==0.0){// This is a grass cube
+                let r = Math.round(Math.random()*1000);
+                if(r%4==0){
+                    let rpos = (Math.random()*2)*0.1;
+                    console.log(rpos);
+                    if(this.cubePositionsF32[i*4+1]>0){
+                            //console.log(this.cubePositionsF32[i*4+1]);
+                            visibleGrassPos.push(this.cubePositionsF32[i*4]+rpos,
+                                this.cubePositionsF32[i*4+1]+0.5,  
+                                this.cubePositionsF32[i*4+2]+rpos,  
+                                this.cubePositionsF32[i*4+3],    
+                               );
+                        }
+                }else if(r%6==0){
+                    if(this.cubePositionsF32[i*4+1]>0){
+                        //console.log(this.cubePositionsF32[i*4+1]);
+                        visibleRockPos.push(this.cubePositionsF32[i*4],
+                            this.cubePositionsF32[i*4+1]+0.5,  
+                            this.cubePositionsF32[i*4+2],  
+                            this.cubePositionsF32[i*4+3],    
+                           );
+                    }
+                }
+            }
+        }
+        this.rockPositionsF32 = new Float32Array(visibleRockPos);
+        this.grassPositionsF32 = new Float32Array(visibleGrassPos);
+    }
+
+    public grassPositions(): Float32Array {
+        return this.grassPositionsF32;
+    }
+
+    public rockPositions(): Float32Array {
+        return this.rockPositionsF32;
+    }
+
 
     public cubePositions(): Float32Array {
         return this.cubePositionsF32;

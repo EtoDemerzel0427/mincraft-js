@@ -80,6 +80,9 @@ export class GUI implements IGUI {
       0.1,
       1000.0
     );
+    window.clearInterval(this.run1);
+    window.clearInterval(this.run2);
+    window.clearInterval(this.run3);
   }
 
   /**
@@ -151,9 +154,9 @@ export class GUI implements IGUI {
     Math.sin(this.animation.angle)*this.animation.sunRadius,
     1.0]);
     if(this.animation.angle<=(10/6*Math.PI) ||this.animation.angle>=(1/3*Math.PI)){
-      this.animation.lightColor = new Vec3([1.0,0.95,0.95]);//new Vec3([0.2,0.1,0.1]);//more red at morning and afternoon
+      this.animation.lightColor = new Vec3([0.7,0.65,0.65]);
     }else{
-      this.animation.lightColor =new Vec3([1.0,1.0,1.0]); //new Vec3([0.1,0.1,0.1]);
+      this.animation.lightColor =new Vec3([1.0,1.0,1.0]); 
     }
 
     if(this.animation.angle>=(Math.PI/2) && this.animation.angle<=(3/2*Math.PI)){
