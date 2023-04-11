@@ -161,4 +161,98 @@ export const blankCubeFSText = `
         gl_FragColor = vec4(clamp(ka+clamp(dot_nl * kd* pv, 0.0, 1.0),0.0, 1.0),1.0);
     }
 `;
+export const grassVSText = `
+    precision mediump float;
+
+    uniform vec4 uLightPos;    
+    uniform mat4 uView;
+    uniform mat4 uProj;
+    uniform vec3 lightColor;
+    uniform vec3 ambientColor;
+    
+    attribute vec4 aNorm;
+    attribute vec4 aVertPos;
+    attribute vec4 aOffset;
+    
+    varying vec4 normal;
+    varying vec4 wsPos;
+
+    void main () {
+        gl_Position = uProj * uView * (aVertPos + aOffset);
+        wsPos = aVertPos + aOffset;
+        normal = normalize(aNorm);
+    }
+`;
+export const grassFSText = `
+    precision mediump float;
+
+    uniform vec4 uLightPos;
+    
+    varying vec4 normal;
+    varying vec4 wsPos;
+    uniform vec3 lightColor;
+    uniform vec3 ambientColor;
+    
+    void main() {
+        vec3 kd = lightColor;
+        vec3 ka = ambientColor;
+        vec3 c = vec3(0.500,0.89,0.184);
+        /* Compute light fall off */
+        vec4 lightDirection = uLightPos - wsPos;
+        float dot_nl = dot(normalize(lightDirection), normalize(normal));
+	    dot_nl = clamp(dot_nl, 0.0, 1.0);
+        if(dot_nl>=0.9){
+            dot_nl-=0.5;
+        }
+        ka = ka*c;
+        gl_FragColor = vec4(clamp(ka+clamp(dot_nl * kd*c, 0.0, 1.0),0.0, 1.0),1.0);
+    }
+`;
+export const rockVSText = `
+    precision mediump float;
+
+    uniform vec4 uLightPos;    
+    uniform mat4 uView;
+    uniform mat4 uProj;
+    uniform vec3 lightColor;
+    uniform vec3 ambientColor;
+    
+    attribute vec4 aNorm;
+    attribute vec4 aVertPos;
+    attribute vec4 aOffset;
+    
+    varying vec4 normal;
+    varying vec4 wsPos;
+
+    void main () {
+        gl_Position = uProj * uView * (aVertPos + aOffset);
+        wsPos = aVertPos + aOffset;
+        normal = normalize(aNorm);
+    }
+`;
+export const rockFSText = `
+    precision mediump float;
+
+    uniform vec4 uLightPos;
+    
+    varying vec4 normal;
+    varying vec4 wsPos;
+    uniform vec3 lightColor;
+    uniform vec3 ambientColor;
+    
+    void main() {
+        vec3 kd = lightColor;
+        vec3 ka = ambientColor;
+        vec3 c = vec3(0.8,0.52,0.25);
+        /* Compute light fall off */
+        vec4 lightDirection = uLightPos - wsPos;
+        float dot_nl = dot(normalize(lightDirection), normalize(normal));
+	    dot_nl = clamp(dot_nl, 0.0, 1.0);
+        if(dot_nl>=0.9){
+            dot_nl-=0.5;
+        }
+        ka = ka*c;
+        gl_FragColor = vec4(clamp(ka+clamp(dot_nl * kd*c, 0.0, 1.0),0.0, 1.0),1.0);
+    }
+`;
 //# sourceMappingURL=Shaders.js.map

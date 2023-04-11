@@ -26,6 +26,9 @@ class GUI {
      */
     reset() {
         this.camera = new Camera(new Vec3([0, 100, 0]), new Vec3([0, 100, -1]), new Vec3([0, 1, 0]), 45, this.width / this.height, 0.1, 1000.0);
+        window.clearInterval(this.run1);
+        window.clearInterval(this.run2);
+        window.clearInterval(this.run3);
     }
     /**
      * Sets the GUI's camera to the given camera
@@ -82,10 +85,10 @@ class GUI {
             Math.sin(this.animation.angle) * this.animation.sunRadius,
             1.0]);
         if (this.animation.angle <= (10 / 6 * Math.PI) || this.animation.angle >= (1 / 3 * Math.PI)) {
-            this.animation.lightColor = new Vec3([1.0, 0.95, 0.95]); //new Vec3([0.2,0.1,0.1]);//more red at morning and afternoon
+            this.animation.lightColor = new Vec3([0.7, 0.65, 0.65]);
         }
         else {
-            this.animation.lightColor = new Vec3([1.0, 1.0, 1.0]); //new Vec3([0.1,0.1,0.1]);
+            this.animation.lightColor = new Vec3([1.0, 1.0, 1.0]);
         }
         if (this.animation.angle >= (Math.PI / 2) && this.animation.angle <= (3 / 2 * Math.PI)) {
             this.animation.ambientColor = new Vec3([0.05, 0.05, 0.05]); // darker at night

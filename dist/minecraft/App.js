@@ -1,10 +1,12 @@
 import { Debugger } from "../lib/webglutils/Debugging.js";
 import { CanvasAnimation } from "../lib/webglutils/CanvasAnimation.js";
 import { GUI } from "./Gui.js";
-import { blankCubeFSText, blankCubeVSText } from "./Shaders.js";
+import { blankCubeFSText, blankCubeVSText, grassVSText, grassFSText, rockVSText, rockFSText } from "./Shaders.js";
 import { Vec4, Vec3 } from "../lib/TSM.js";
 import { RenderPass } from "../lib/webglutils/RenderPass.js";
 import { Cube } from "./Cube.js";
+import { Grass } from "./Grass.js";
+import { BigRock } from "./BigRock.js";
 import { Chunk } from "./Chunk.js";
 class MinecraftAnimation extends CanvasAnimation {
     constructor(canvas) {
@@ -32,8 +34,14 @@ class MinecraftAnimation extends CanvasAnimation {
         this.lastTimeStamp = Date.now();
         this.vertical_velocity = 0;
         this.blankCubeRenderPass = new RenderPass(gl, blankCubeVSText, blankCubeFSText);
+        this.GrassRenderPass = new RenderPass(gl, grassVSText, grassFSText);
+        this.RockRenderPass = new RenderPass(gl, rockVSText, rockFSText);
         this.cubeGeometry = new Cube();
+        this.grassGeometry = new Grass();
+        this.rockGeometry = new BigRock();
         this.initBlankCube();
+        this.initGrass();
+        this.initRock();
         this.lightColor = new Vec3([1.0, 1.0, 1.0]);
         this.ambientColor = new Vec3([0.1, 0.1, 0.1]);
         this.angle = 7.0 * 2.0 * Math.PI / 8.0 + Math.PI / 18.0;
@@ -152,6 +160,14 @@ class MinecraftAnimation extends CanvasAnimation {
      */
     reset() {
         this.gui.reset();
+        this.lightColor = new Vec3([1.0, 1.0, 1.0]);
+        this.ambientColor = new Vec3([0.1, 0.1, 0.1]);
+        this.angle = 7.0 * 2.0 * Math.PI / 8.0 + Math.PI / 18.0;
+        this.sunRadius = 1000 * Math.sqrt(2);
+        this.lightPosition = new Vec4([Math.sin(this.angle) * this.sunRadius,
+            Math.cos(this.angle) * this.sunRadius,
+            Math.sin(this.angle) * this.sunRadius,
+            1.0]);
         this.playerPosition = this.gui.getCamera().pos();
         this.updateChunks();
         this.lastTimeStamp = Date.now();
@@ -185,6 +201,52 @@ class MinecraftAnimation extends CanvasAnimation {
         this.blankCubeRenderPass.setDrawData(this.ctx.TRIANGLES, this.cubeGeometry.indicesFlat().length, this.ctx.UNSIGNED_INT, 0);
         this.blankCubeRenderPass.setup();
     }
+    initGrass() {
+        this.GrassRenderPass.setIndexBufferData(this.grassGeometry.indicesFlat());
+        this.GrassRenderPass.addAttribute("aVertPos", 4, this.ctx.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, this.grassGeometry.positionsFlat());
+        this.GrassRenderPass.addAttribute("aNorm", 4, this.ctx.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, this.grassGeometry.normalsFlat());
+        this.GrassRenderPass.addInstancedAttribute("aOffset", 4, this.ctx.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, new Float32Array(0));
+        this.GrassRenderPass.addUniform("uLightPos", (gl, loc) => {
+            gl.uniform4fv(loc, this.lightPosition.xyzw);
+        });
+        this.GrassRenderPass.addUniform("lightColor", (gl, loc) => {
+            gl.uniform3fv(loc, this.lightColor.xyz);
+        });
+        this.GrassRenderPass.addUniform("ambientColor", (gl, loc) => {
+            gl.uniform3fv(loc, this.ambientColor.xyz);
+        });
+        this.GrassRenderPass.addUniform("uProj", (gl, loc) => {
+            gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.projMatrix().all()));
+        });
+        this.GrassRenderPass.addUniform("uView", (gl, loc) => {
+            gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.viewMatrix().all()));
+        });
+        this.GrassRenderPass.setDrawData(this.ctx.TRIANGLES, this.grassGeometry.indicesFlat().length, this.ctx.UNSIGNED_INT, 0);
+        this.GrassRenderPass.setup();
+    }
+    initRock() {
+        this.RockRenderPass.setIndexBufferData(this.rockGeometry.indicesFlat());
+        this.RockRenderPass.addAttribute("aVertPos", 4, this.ctx.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, this.rockGeometry.positionsFlat());
+        this.RockRenderPass.addAttribute("aNorm", 4, this.ctx.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, this.rockGeometry.normalsFlat());
+        this.RockRenderPass.addInstancedAttribute("aOffset", 4, this.ctx.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0, undefined, new Float32Array(0));
+        this.RockRenderPass.addUniform("uLightPos", (gl, loc) => {
+            gl.uniform4fv(loc, this.lightPosition.xyzw);
+        });
+        this.RockRenderPass.addUniform("lightColor", (gl, loc) => {
+            gl.uniform3fv(loc, this.lightColor.xyz);
+        });
+        this.RockRenderPass.addUniform("ambientColor", (gl, loc) => {
+            gl.uniform3fv(loc, this.ambientColor.xyz);
+        });
+        this.RockRenderPass.addUniform("uProj", (gl, loc) => {
+            gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.projMatrix().all()));
+        });
+        this.RockRenderPass.addUniform("uView", (gl, loc) => {
+            gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.viewMatrix().all()));
+        });
+        this.RockRenderPass.setDrawData(this.ctx.TRIANGLES, this.rockGeometry.indicesFlat().length, this.ctx.UNSIGNED_INT, 0);
+        this.RockRenderPass.setup();
+    }
     updatePlayerPosition(delta_time) {
         // vertical movement
         if (this.playerPosition.y > this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT || this.vertical_velocity > 0) {
@@ -201,7 +263,7 @@ class MinecraftAnimation extends CanvasAnimation {
         const next_pos = this.playerPosition.copy().add(this.gui.walkDir());
         const next_min_height = this.getMinStandingHeight(next_pos.x, next_pos.z);
         // debug code
-        // console.log("cur_pos: " + this.playerPosition.x + ", " + this.playerPosition.y + ", " + this.playerPosition.z);
+        //console.log("cur_pos: " + this.playerPosition.x + ", " + this.playerPosition.y + ", " + this.playerPosition.z);
         // console.log("next_pos: " + next_pos.x + ", " + next_pos.y + ", " + next_pos.z);
         // console.log("next_min_height: " + next_min_height);
         if (next_pos.y >= next_min_height + MinecraftAnimation.PLAYER_HEIGHT) {
@@ -258,6 +320,10 @@ class MinecraftAnimation extends CanvasAnimation {
             this.blankCubeRenderPass.updateAttributeBuffer("aOffset", chunk.cubePositions());
             this.blankCubeRenderPass.updateAttributeBuffer("blockType", chunk.cubeTypes());
             this.blankCubeRenderPass.drawInstanced(chunk.cubePositions().length / 4);
+            this.GrassRenderPass.updateAttributeBuffer("aOffset", chunk.grassPositions());
+            this.GrassRenderPass.drawInstanced(chunk.grassPositions().length / 4);
+            this.RockRenderPass.updateAttributeBuffer("aOffset", chunk.rockPositions());
+            this.RockRenderPass.drawInstanced(chunk.rockPositions().length / 4);
         }
     }
     getGUI() {

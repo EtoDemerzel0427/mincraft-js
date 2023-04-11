@@ -1,5 +1,3 @@
-// import {Mat3, Mat4, Vec2, Vec3, Vec4} from "../lib/TSM.js";
-// import Rand from "../lib/rand-seed/Rand.js"
 import MultiOctaveNoise from "./noise.js";
 class Chunk {
     constructor(centerX, centerY, size) {
@@ -11,6 +9,7 @@ class Chunk {
         this.minHeight = Number.MAX_SAFE_INTEGER;
         this.generateCubes();
         this.generateCubeType();
+        this.generateGrass();
     }
     generateCubes() {
         const topleftx = this.x - this.size / 2;
@@ -65,6 +64,37 @@ class Chunk {
             visibleCubeTypes.push(res);
         }
         this.cubeTypeF32 = new Float32Array(visibleCubeTypes);
+    }
+    generateGrass() {
+        const visibleGrassPos = [];
+        const visibleRockPos = [];
+        for (let i = 0; i < this.cubes; ++i) {
+            if (this.cubeTypeF32[i] == 0.0) { // This is a grass cube
+                let r = Math.round(Math.random() * 1000);
+                if (r % 4 == 0) {
+                    let rpos = (Math.random() * 2) * 0.1;
+                    console.log(rpos);
+                    if (this.cubePositionsF32[i * 4 + 1] > 0) {
+                        //console.log(this.cubePositionsF32[i*4+1]);
+                        visibleGrassPos.push(this.cubePositionsF32[i * 4] + rpos, this.cubePositionsF32[i * 4 + 1] + 0.5, this.cubePositionsF32[i * 4 + 2] + rpos, this.cubePositionsF32[i * 4 + 3]);
+                    }
+                }
+                else if (r % 6 == 0) {
+                    if (this.cubePositionsF32[i * 4 + 1] > 0) {
+                        //console.log(this.cubePositionsF32[i*4+1]);
+                        visibleRockPos.push(this.cubePositionsF32[i * 4], this.cubePositionsF32[i * 4 + 1] + 0.5, this.cubePositionsF32[i * 4 + 2], this.cubePositionsF32[i * 4 + 3]);
+                    }
+                }
+            }
+        }
+        this.rockPositionsF32 = new Float32Array(visibleRockPos);
+        this.grassPositionsF32 = new Float32Array(visibleGrassPos);
+    }
+    grassPositions() {
+        return this.grassPositionsF32;
+    }
+    rockPositions() {
+        return this.rockPositionsF32;
     }
     cubePositions() {
         return this.cubePositionsF32;
