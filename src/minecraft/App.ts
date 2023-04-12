@@ -569,10 +569,10 @@ export class MinecraftAnimation extends CanvasAnimation {
   public jump() {
       //TODO: If the player is not already in the lair, launch them upwards at 10 units/sec.
       if (this.playerPosition.y <= this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT) {
-          this.vertical_velocity = 10;
-      } else {
-         console.log(this.playerPosition.y, this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT);
-      }
+        this.vertical_velocity = 10;
+      } // } else {
+      //    console.log(this.playerPosition.y, this.curMinHeight + MinecraftAnimation.PLAYER_HEIGHT);
+      // }
   }
 }
 

@@ -16,6 +16,7 @@ class GUI {
         this.prevX = 0;
         this.prevY = 0;
         this.dragging = false;
+        this.Pdown = false;
         this.thetaPerHour = 2 * Math.PI / 24.0;
         this.animation = animation;
         this.reset();
@@ -59,6 +60,9 @@ class GUI {
     }
     dragEnd(mouse) {
         this.dragging = false;
+    }
+    PDownStatus() {
+        return this.Pdown;
     }
     /**
      * The callback function for a drag event.
@@ -150,6 +154,10 @@ class GUI {
             case "Digit0": {
                 break;
             }
+            case "KeyP": {
+                this.Pdown = true;
+                break;
+            }
             default: {
                 console.log("Key : '", key.code, "' was pressed.");
                 break;
@@ -172,6 +180,10 @@ class GUI {
             }
             case "KeyD": {
                 this.Ddown = false;
+                break;
+            }
+            case "KeyP": {
+                this.Pdown = false;
                 break;
             }
             case "Digit1": {

@@ -73,7 +73,7 @@ class Chunk {
                 let r = Math.round(Math.random() * 1000);
                 if (r % 4 == 0) {
                     let rpos = (Math.random() * 2) * 0.1;
-                    console.log(rpos);
+                    // console.log(rpos);
                     if (this.cubePositionsF32[i * 4 + 1] > 0) {
                         //console.log(this.cubePositionsF32[i*4+1]);
                         visibleGrassPos.push(this.cubePositionsF32[i * 4] + rpos, this.cubePositionsF32[i * 4 + 1] + 0.5, this.cubePositionsF32[i * 4 + 2] + rpos, this.cubePositionsF32[i * 4 + 3]);
